@@ -1,0 +1,3 @@
+[submodule "ext/le2d"]
+	path = ext/le2d
+	url = https://github.com/karnkaul/le2d.git
