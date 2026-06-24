@@ -1,5 +1,6 @@
 #pragma once
 #include "castlemate/core/piece.hpp"
+#include "castlemate/ui/outline.hpp"
 #include <le2d/drawable/shape.hpp>
 #include <le2d/drawable/sprite.hpp>
 
@@ -15,6 +16,8 @@ class BoardView {
 	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
 	void update_board(std::uint64_t const* bitboards);
 
+	[[nodiscard]] auto get_square_outline() const -> SquareOutline& { return *m_square_outline; }
+
   private:
 	void create_board();
 	void load_piece_texture();
@@ -24,6 +27,8 @@ class BoardView {
 
 	le::drawable::Quad m_board{};
 	std::unique_ptr<le::IShader> m_board_shader{};
+
+	std::unique_ptr<SquareOutline> m_square_outline{};
 
 	std::vector<le::drawable::Sprite> m_piece_sprites{};
 	std::array<Piece, 64> m_pieces{};

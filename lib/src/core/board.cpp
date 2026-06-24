@@ -1,15 +1,19 @@
 #include "castlemate/core/board.hpp"
 #include "castlemate/utils/bit_math.hpp"
+#include "castlemate/utils/constants.hpp"
 
 namespace CastleMate {
-Board::Board(gsl::not_null<App const*> app) {
-	m_boardView = std::make_unique<BoardView>(app);
+Board::Board() { load_board(); }
 
-	load_board();
-	m_boardView->update_board(static_cast<std::uint64_t const*>(m_position.bb));
+void Board::click_square(glm::ivec2 square, SquareOutline& outline) {
+	auto i = (square.y * 8) + square.x;
+	if (get_bit(m_position.occ, i) && !(m_selected_sq.has_value() && m_selected_sq == i)) {
+		m_selected_sq = i;
+		outline.set_position((glm::vec2{square - glm::ivec2{4, 4}} * tile_size_v) + tile_size_v * 0.5f);
+	} else {
+		m_selected_sq = std::nullopt;
+	}
 }
-
-void Board::draw(le::IRenderer& renderer) const { m_boardView->draw(renderer); }
 
 void Board::load_board() {
 	// White
@@ -33,5 +37,14 @@ void Board::load_board() {
 	set_bit(m_position.bb[BB], sq(7, 5));
 	set_bit(m_position.bb[BQ], sq(7, 3));
 	set_bit(m_position.bb[BK], sq(7, 4));
+
+	update_occ();
+}
+
+void Board::update_occ() {
+	auto const& bb = m_position.bb;
+	m_position.white_occ = bb[WP] | bb[WR] | bb[WN] | bb[WB] | bb[WQ] | bb[WK];
+	m_position.black_occ = bb[BP] | bb[BR] | bb[BN] | bb[BB] | bb[BQ] | bb[BK];
+	m_position.occ = m_position.white_occ | m_position.black_occ;
 }
 } // namespace CastleMate

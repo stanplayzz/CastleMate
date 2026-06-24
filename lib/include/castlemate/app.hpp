@@ -1,5 +1,6 @@
 #pragma once
 #include "castlemate/core/board.hpp"
+#include "castlemate/ui/board_view.hpp"
 #include <le2d/context.hpp>
 #include <le2d/file_data_loader.hpp>
 
@@ -18,12 +19,19 @@ class App {
 		return m_context->create_asset_loader(&get_data_loader());
 	}
 
+	[[nodiscard]] auto get_board() const -> Board const& { return m_board; }
+
   private:
 	void create_data_loader();
+	void handle_input();
 
 	std::unique_ptr<le::Context> m_context{};
 	std::unique_ptr<le::IDataLoader> m_data_loader{};
 
-	std::unique_ptr<Board> m_board{};
+	Board m_board{};
+	std::unique_ptr<BoardView> m_boardView{};
+
+	// input
+	glm::vec2 m_mouse_pos{};
 };
 } // namespace CastleMate

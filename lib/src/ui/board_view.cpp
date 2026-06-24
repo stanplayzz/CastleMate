@@ -1,16 +1,13 @@
 #include "castlemate/ui/board_view.hpp"
 #include "castlemate/app.hpp"
 #include "castlemate/utils/bit_math.hpp"
-#include "castlemate/viewport.hpp"
+#include "castlemate/utils/constants.hpp"
 
 namespace CastleMate {
-namespace {
-constexpr auto tile_size_v = viewport_v.world_size.x / 8.f;
-}
-
 BoardView::BoardView(gsl::not_null<App const*> app) : m_app(app) {
 	create_board();
 	load_piece_texture();
+	m_square_outline = std::make_unique<SquareOutline>(app);
 }
 
 void BoardView::draw(le::IRenderer& renderer) const {
@@ -20,6 +17,8 @@ void BoardView::draw(le::IRenderer& renderer) const {
 	renderer.set_shader(m_app->get_context().get_default_shader());
 
 	for (auto const& p : m_piece_sprites) { p.draw(renderer); }
+
+	if (m_app->get_board().get_selected_square()) { m_square_outline->draw(renderer); }
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -95,7 +94,7 @@ void BoardView::update_pieces() {
 		auto file = static_cast<float>(i & 7);
 		auto rank = static_cast<float>(i >> 3);
 
-		auto pos = glm::vec2{file * tile_size_v, rank * tile_size_v};
+		auto pos = glm::vec2{file * tile_size_v.x, rank * tile_size_v.x};
 		pos -= viewport_v.world_size * 0.5f - glm::vec2{tile_size_v * 0.5f};
 
 		m_piece_sprites.back().transform.position = pos;

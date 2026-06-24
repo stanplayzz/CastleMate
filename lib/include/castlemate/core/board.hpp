@@ -1,20 +1,25 @@
 #pragma once
 #include "castlemate/core/piece.hpp"
-#include "castlemate/ui/board_view.hpp"
+#include "castlemate/ui/outline.hpp"
 
 namespace CastleMate {
-class App;
-
 class Board {
   public:
-	Board(gsl::not_null<App const*> app);
+	Board();
+
+	void click_square(glm::ivec2 square, SquareOutline& outline);
 
 	void draw(le::IRenderer& renderer) const;
 
+	[[nodiscard]] auto get_selected_square() const -> std::optional<int> { return m_selected_sq; }
+
+	[[nodiscard]] auto get_bitboard() const -> std::uint64_t const* {
+		return static_cast<std::uint64_t const*>(m_position.bb);
+	}
+
   private:
 	void load_board();
-
-	std::unique_ptr<BoardView> m_boardView{};
+	void update_occ();
 
 	struct {
 		// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
@@ -24,5 +29,7 @@ class Board {
 		std::uint64_t black_occ{};
 		std::uint64_t occ{};
 	} m_position;
+
+	std::optional<int> m_selected_sq{};
 };
 } // namespace CastleMate
