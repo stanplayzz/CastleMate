@@ -75,7 +75,7 @@ void BoardView::create_board() {
 }
 
 void BoardView::load_piece_texture() {
-	m_piece_texture = m_app->create_asset_loader().load<le::ITexture>("images/piece_atlas.json");
+	m_piece_texture = m_app->create_asset_loader().load<le::ITexture>("images/piece_atlas.png");
 	if (!m_piece_texture) { throw std::runtime_error{"Failed to load texture"}; }
 }
 

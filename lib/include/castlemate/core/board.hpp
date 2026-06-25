@@ -1,5 +1,6 @@
 #pragma once
-#include "castlemate/core/piece.hpp"
+#include "castlemate/core/move.hpp"
+#include "castlemate/core/position.hpp"
 #include "castlemate/ui/outline.hpp"
 
 namespace CastleMate {
@@ -17,19 +18,23 @@ class Board {
 		return static_cast<std::uint64_t const*>(m_position.bb);
 	}
 
+	[[nodiscard]] auto should_update_view() -> bool {
+		if (m_update_view) {
+			m_update_view = false;
+			return true;
+		}
+		return false;
+	}
+
   private:
 	void load_board();
 	void update_occ();
 
-	struct {
-		// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
-		std::uint64_t bb[COUNT_]{};
+	void move(Move m);
 
-		std::uint64_t white_occ{};
-		std::uint64_t black_occ{};
-		std::uint64_t occ{};
-	} m_position;
+	Position m_position;
 
 	std::optional<int> m_selected_sq{};
+	bool m_update_view{};
 };
 } // namespace CastleMate

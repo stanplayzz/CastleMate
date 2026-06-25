@@ -19,8 +19,8 @@ App::App() {
 	create_data_loader();
 	Theme::initialize(*m_data_loader);
 
-	m_boardView = std::make_unique<BoardView>(this);
-	m_boardView->update_board(static_cast<std::uint64_t const*>(m_board.get_bitboard()));
+	m_board_view = std::make_unique<BoardView>(this);
+	m_board_view->update_board(static_cast<std::uint64_t const*>(m_board.get_bitboard()));
 }
 
 void App::run() {
@@ -29,9 +29,13 @@ void App::run() {
 
 		handle_input();
 
+		if (m_board.should_update_view()) {
+			m_board_view->update_board(static_cast<std::uint64_t const*>(m_board.get_bitboard()));
+		}
+
 		auto& renderer = m_context->begin_render(Theme::from_name<kvf::Color>({"background"}));
 		renderer.viewport = viewport_v;
-		m_boardView->draw(renderer);
+		m_board_view->draw(renderer);
 
 		m_context->present();
 	}
@@ -51,7 +55,7 @@ void App::handle_input() {
 		if (auto const* mouse = std::get_if<le::event::CursorPos>(&e)) { m_mouse_pos = mouse->window; }
 		if (auto const* mouse = std::get_if<le::event::MouseButton>(&e)) {
 			if (mouse->button == GLFW_MOUSE_BUTTON_1 & mouse->action == GLFW_RELEASE) {
-				m_board.click_square(screen_to_sq(m_mouse_pos), m_boardView->get_square_outline());
+				m_board.click_square(screen_to_sq(m_mouse_pos), m_board_view->get_square_outline());
 			}
 		}
 	}

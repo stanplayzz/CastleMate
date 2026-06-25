@@ -29,7 +29,7 @@ class App {
 	std::unique_ptr<le::IDataLoader> m_data_loader{};
 
 	Board m_board{};
-	std::unique_ptr<BoardView> m_boardView{};
+	std::unique_ptr<BoardView> m_board_view{};
 
 	// input
 	glm::vec2 m_mouse_pos{};
