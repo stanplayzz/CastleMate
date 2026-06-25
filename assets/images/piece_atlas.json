@@ -1,0 +1,5 @@
+{
+  "type_name": "Texture",
+  "image": "images/piece_atlas.png",
+  "filter": "nearest"
+}

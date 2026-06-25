@@ -1,5 +1,6 @@
 #include "castlemate/ui/board_view.hpp"
 #include "castlemate/app.hpp"
+#include "castlemate/theme.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include "castlemate/utils/constants.hpp"
 
@@ -12,6 +13,15 @@ BoardView::BoardView(gsl::not_null<App const*> app) : m_app(app) {
 
 void BoardView::draw(le::IRenderer& renderer) const {
 	renderer.set_shader(*m_board_shader);
+
+	struct BoardColors {
+		glm::vec4 light{};
+		glm::vec4 dark{};
+	} colors;
+
+	colors.light = Theme::from_name<kvf::Color>({"board", "light"}).to_vec4();
+	colors.dark = Theme::from_name<kvf::Color>({"board", "dark"}).to_vec4();
+	renderer.set_push_constants(vk::ShaderStageFlagBits::eFragment, sizeof(BoardColors), &colors);
 	m_board.draw(renderer);
 
 	renderer.set_shader(m_app->get_context().get_default_shader());
@@ -65,7 +75,7 @@ void BoardView::create_board() {
 }
 
 void BoardView::load_piece_texture() {
-	m_piece_texture = m_app->create_asset_loader().load<le::ITexture>("images/piece_atlas.png");
+	m_piece_texture = m_app->create_asset_loader().load<le::ITexture>("images/piece_atlas.json");
 	if (!m_piece_texture) { throw std::runtime_error{"Failed to load texture"}; }
 }
 

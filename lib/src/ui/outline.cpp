@@ -6,7 +6,7 @@
 namespace CastleMate {
 SquareOutline::SquareOutline(gsl::not_null<App const*> app) : m_app(app) {
 	m_quad.create(tile_size_v);
-	m_quad.tint = theme::highlight_v;
+	m_quad.tint = Theme::from_name<kvf::Color>({"square_highlight"});
 
 	auto const vert = m_app->get_data_loader().load_spir_v("shaders/outline.vert.spv");
 	auto const frag = m_app->get_data_loader().load_spir_v("shaders/outline.frag.spv");

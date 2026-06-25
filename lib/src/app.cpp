@@ -17,6 +17,7 @@ auto const context_create_info_v = le::Context::CreateInfo{
 App::App() {
 	m_context = le::Context::create(context_create_info_v);
 	create_data_loader();
+	Theme::initialize(*m_data_loader);
 
 	m_boardView = std::make_unique<BoardView>(this);
 	m_boardView->update_board(static_cast<std::uint64_t const*>(m_board.get_bitboard()));
@@ -28,9 +29,8 @@ void App::run() {
 
 		handle_input();
 
-		auto& renderer = m_context->begin_render(theme::background_v);
+		auto& renderer = m_context->begin_render(Theme::from_name<kvf::Color>({"background"}));
 		renderer.viewport = viewport_v;
-
 		m_boardView->draw(renderer);
 
 		m_context->present();
