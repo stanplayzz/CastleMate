@@ -1,24 +1,21 @@
 #include "castlemate/core/board.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include "castlemate/utils/constants.hpp"
-#include <print>
 
 namespace CastleMate {
 Board::Board() {
-	std::println("Started precomputing moves");
-	queen_move(0, 0);
-	std::println("Finished precomputing moves");
+	queen_move(0, 0, 0); // used for initializing precomputed moves
 	load_board();
 }
 
 void Board::click_square(glm::ivec2 square, SquareOutline& outline) {
 	auto i = (square.y * 8) + square.x;
-	if (get_bit(m_position.occ, i) && !(m_selected_sq.has_value() && m_selected_sq == i)) {
-		m_selected_sq = i;
-		outline.set_position((glm::vec2{square - glm::ivec2{4, 4}} * tile_size_v) + tile_size_v * 0.5f);
-	} else if (m_selected_sq.has_value()) {
+	if (m_selected_sq.has_value()) {
 		move({.from = *m_selected_sq, .to = i});
 		m_selected_sq = std::nullopt;
+	} else if (get_bit(m_position.occ, i)) {
+		m_selected_sq = i;
+		outline.set_position((glm::vec2{square - glm::ivec2{4, 4}} * tile_size_v) + (tile_size_v * 0.5f));
 	}
 }
 
@@ -59,20 +56,16 @@ void Board::move(Move m) {
 	auto moves = get_legal_moves(m_position, m.from);
 	if (std::ranges::find(moves, m.to) == moves.end()) { return; }
 
-	std::uint64_t* bb = nullptr;
-	for (auto& b : m_position.bb) {
-		if (get_bit(b, m.from)) {
-			bb = &b;
+	for (auto& bb : m_position.bb) { clear_bit(bb, m.to); }
+
+	for (auto& bb : m_position.bb) {
+		if (get_bit(bb, m.from)) {
+			clear_bit(bb, m.from);
+			set_bit(bb, m.to);
 			break;
 		}
 	}
-	if (!bb) { return; }
-
-	clear_bit(*bb, m.from);
-	set_bit(*bb, m.to);
-
 	update_occ();
-
 	m_update_view = true;
 }
 } // namespace CastleMate
