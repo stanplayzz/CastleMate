@@ -10,7 +10,7 @@ class Board {
 
 	void click_square(glm::ivec2 square, SquareOutline& outline);
 
-	void draw(le::IRenderer& renderer) const;
+	void set_promotion(Piece p);
 
 	[[nodiscard]] auto get_selected_square() const -> std::optional<int> { return m_selected_sq; }
 
@@ -26,11 +26,16 @@ class Board {
 		return false;
 	}
 
+	[[nodiscard]] auto show_promotion_view() const -> std::optional<bool> {
+		return m_should_promote ? std::optional<bool>{m_white_turn} : std::nullopt;
+	}
+
   private:
 	void load_board();
 	void update_occ();
 
 	void move(Move m);
+	void finish_move(Move m);
 
 	Position m_position;
 
@@ -38,5 +43,8 @@ class Board {
 	bool m_update_view{};
 
 	bool m_white_turn{true};
+
+	bool m_should_promote{};
+	std::optional<Move> m_pending_move{};
 };
 } // namespace CastleMate

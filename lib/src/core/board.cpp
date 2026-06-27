@@ -10,6 +10,7 @@ Board::Board() {
 }
 
 void Board::click_square(glm::ivec2 square, SquareOutline& outline) {
+	if (m_pending_move) { return; }
 	auto i = (square.y * 8) + square.x;
 	if (m_selected_sq.has_value()) {
 		move({.from = *m_selected_sq, .to = i});
@@ -21,6 +22,13 @@ void Board::click_square(glm::ivec2 square, SquareOutline& outline) {
 		m_selected_sq = i;
 		outline.set_position((glm::vec2{square - glm::ivec2{4, 4}} * tile_size_v) + (tile_size_v * 0.5f));
 	}
+}
+
+void Board::set_promotion(Piece p) {
+	m_pending_move->promotion = p;
+	m_should_promote = false;
+	finish_move(*m_pending_move);
+	m_pending_move = std::nullopt;
 }
 
 void Board::load_board() {
@@ -60,6 +68,19 @@ void Board::move(Move m) {
 	auto moves = get_legal_moves(m_position, m.from);
 	if (std::ranges::find(moves, m.to) == moves.end()) { return; }
 
+	// promotion
+	auto is_white = get_bit(m_position.bb[WP], m.from);
+	auto is_black = get_bit(m_position.bb[BP], m.from);
+	if ((is_white && m.to >= 56) || (is_black && m.to < 8)) {
+		m_pending_move = m;
+		m_should_promote = true;
+		return;
+	}
+
+	finish_move(m);
+}
+
+void Board::finish_move(Move m) {
 	apply_move(m_position, m);
 	m_white_turn = !m_white_turn;
 	m_update_view = true;

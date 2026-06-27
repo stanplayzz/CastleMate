@@ -33,6 +33,12 @@ void App::run() {
 			m_board_view->update_board(static_cast<std::uint64_t const*>(m_board.get_bitboard()));
 		}
 
+		if (auto white = m_board.show_promotion_view()) {
+			m_board_view->show_promotion(*white);
+		} else {
+			m_board_view->hide_promotion();
+		}
+
 		auto& renderer = m_context->begin_render(Theme::from_name<kvf::Color>({"background"}));
 		renderer.viewport = viewport_v;
 		m_board_view->draw(renderer);
@@ -50,12 +56,23 @@ void App::create_data_loader() {
 	m_data_loader = std::make_unique<le::FileDataLoader>(assets_dir);
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void App::handle_input() {
 	for (auto const& e : m_context->event_queue()) {
 		if (auto const* mouse = std::get_if<le::event::CursorPos>(&e)) { m_mouse_pos = mouse->window; }
 		if (auto const* mouse = std::get_if<le::event::MouseButton>(&e)) {
-			if (mouse->button == GLFW_MOUSE_BUTTON_1 & mouse->action == GLFW_RELEASE) {
-				m_board.click_square(screen_to_sq(m_mouse_pos), m_board_view->get_square_outline());
+			if (mouse->button == GLFW_MOUSE_BUTTON_1 && mouse->action == GLFW_RELEASE) {
+				if (auto white = m_board.show_promotion_view()) {
+					for (std::size_t i = 0; i < m_board_view->get_promotion_ui().choices.size(); i++) {
+						auto& choice = m_board_view->get_promotion_ui().choices.at(i);
+						if (choice.bounding_rect().contains(m_mouse_pos - (viewport_v.world_size * 0.5f))) {
+							auto const pieces = *white ? std::array{WR, WN, WB, WQ} : std::array{BR, BN, BB, BQ};
+							m_board.set_promotion(pieces.at(i));
+						}
+					}
+				} else {
+					m_board.click_square(screen_to_sq(m_mouse_pos), m_board_view->get_square_outline());
+				}
 			}
 		}
 	}

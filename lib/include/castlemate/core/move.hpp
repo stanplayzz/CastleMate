@@ -9,14 +9,17 @@ namespace CastleMate {
 struct Move {
 	int from{};
 	int to{};
+	Piece promotion{COUNT_};
 };
 
 constexpr std::uint64_t FILE_A = 0x0101010101010101;
 constexpr std::uint64_t FILE_B = 0x0202020202020202;
 constexpr std::uint64_t FILE_G = 0x4040404040404040;
 constexpr std::uint64_t FILE_H = 0x8080808080808080;
+constexpr std::uint64_t RANK_1 = 0x00000000000000ff;
 constexpr std::uint64_t RANK_2 = 0x000000000000ff00;
 constexpr std::uint64_t RANK_7 = 0x00ff000000000000;
+constexpr std::uint64_t RANK_8 = 0xff00000000000000;
 
 // Precomputed piece moves
 constexpr auto knight_move(int sq, std::uint64_t friendly) -> std::uint64_t {
@@ -53,12 +56,12 @@ constexpr auto pawn_move(int sq, Piece p, Position pos, std::uint64_t friendly) 
 	if (p == WP) {
 		auto single_push = (b << 8) & ~pos.occ;
 		auto double_push = get_bit(RANK_2, sq) ? (single_push << 8) & ~pos.occ : 0;
-		auto attacks = ((b << 9) & ~FILE_H) | ((b << 7) & ~FILE_A);
+		auto attacks = ((b << 9) & ~FILE_A) | ((b << 7) & ~FILE_H);
 		return single_push | double_push | (attacks & ((~friendly & pos.occ) | ep_bb));
 	}
 	auto single_push = (b >> 8) & ~pos.occ;
 	auto double_push = get_bit(RANK_7, sq) ? (single_push >> 8) & ~pos.occ : 0;
-	auto attacks = ((b >> 9) & ~FILE_A) | ((b >> 7) & ~FILE_H);
+	auto attacks = ((b >> 9) & ~FILE_H) | ((b >> 7) & ~FILE_A);
 	return single_push | double_push | (attacks & ((~friendly & pos.occ) | ep_bb));
 }
 
@@ -147,29 +150,7 @@ constexpr auto update_castling_rights(Position& pos, Move m) {
 	if (m.from == 63 || m.to == 63) { pos.castle_bk = false; }
 }
 
-constexpr auto apply_move(Position& pos, Move m) {
-	auto is_white = get_bit(pos.bb[WP], m.from);
-	auto is_black = get_bit(pos.bb[BP], m.from);
-
-	for (auto& bb : pos.bb) { clear_bit(bb, m.to); }
-
-	if (is_white && m.to == pos.en_passant) {
-		clear_bit(pos.bb[BP], m.to - 8);
-		clear_bit(pos.occ, m.to - 8);
-	}
-	if (is_black && m.to == pos.en_passant) {
-		clear_bit(pos.bb[WP], m.to + 8);
-		clear_bit(pos.occ, m.to + 8);
-	}
-
-	for (auto& bb : pos.bb) {
-		if (get_bit(bb, m.from)) {
-			replace_bit(bb, m.from, m.to);
-			break;
-		}
-	}
-
-	// move rook in case of castle
+constexpr auto castle(Position& pos, Move m) {
 	if (get_bit(pos.bb[WK], m.to)) {
 		if (m.from == 4 && m.to == 6) {
 			replace_bit(pos.bb[WR], 7, 5);
@@ -187,8 +168,42 @@ constexpr auto apply_move(Position& pos, Move m) {
 		pos.castle_bk = pos.castle_bq = false;
 	}
 
-	// revoke castling rights
 	update_castling_rights(pos, m);
+}
+
+constexpr auto promote(Position& pos, Move m, bool white) {
+	clear_bit(white ? pos.bb[WP] : pos.bb[BP], m.from);
+	set_bit(pos.bb[m.promotion], m.to); // NOLINT
+}
+
+constexpr auto apply_move(Position& pos, Move m) {
+	auto is_white = get_bit(pos.bb[WP], m.from);
+	auto is_black = get_bit(pos.bb[BP], m.from);
+
+	for (auto& bb : pos.bb) { clear_bit(bb, m.to); }
+
+	if (is_white && m.to == pos.en_passant) {
+		clear_bit(pos.bb[BP], m.to - 8);
+		clear_bit(pos.occ, m.to - 8);
+	}
+	if (is_black && m.to == pos.en_passant) {
+		clear_bit(pos.bb[WP], m.to + 8);
+		clear_bit(pos.occ, m.to + 8);
+	}
+
+	for (auto& bb : pos.bb) {
+		if (get_bit(bb, m.from)) {
+			if (((is_white && m.to >= 56) || (is_black && m.to < 8)) && m.promotion != COUNT_) {
+				promote(pos, m, is_white);
+				break;
+			}
+			replace_bit(bb, m.from, m.to);
+			break;
+		}
+	}
+
+	// only castles if needed
+	castle(pos, m);
 
 	pos.en_passant = -1;
 	if (is_white && (m.to - m.from == 16)) { pos.en_passant = m.from + 8; }
