@@ -36,5 +36,7 @@ class Board {
 
 	std::optional<int> m_selected_sq{};
 	bool m_update_view{};
+
+	bool m_white_turn{true};
 };
 } // namespace CastleMate

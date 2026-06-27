@@ -1,6 +1,7 @@
 #include "castlemate/core/board.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include "castlemate/utils/constants.hpp"
+#include <print>
 
 namespace CastleMate {
 Board::Board() {
@@ -14,6 +15,9 @@ void Board::click_square(glm::ivec2 square, SquareOutline& outline) {
 		move({.from = *m_selected_sq, .to = i});
 		m_selected_sq = std::nullopt;
 	} else if (get_bit(m_position.occ, i)) {
+		if ((get_bit(m_position.white_occ, i) && !m_white_turn) || (get_bit(m_position.black_occ, i) && m_white_turn)) {
+			return;
+		}
 		m_selected_sq = i;
 		outline.set_position((glm::vec2{square - glm::ivec2{4, 4}} * tile_size_v) + (tile_size_v * 0.5f));
 	}
@@ -56,16 +60,11 @@ void Board::move(Move m) {
 	auto moves = get_legal_moves(m_position, m.from);
 	if (std::ranges::find(moves, m.to) == moves.end()) { return; }
 
-	for (auto& bb : m_position.bb) { clear_bit(bb, m.to); }
-
-	for (auto& bb : m_position.bb) {
-		if (get_bit(bb, m.from)) {
-			clear_bit(bb, m.from);
-			set_bit(bb, m.to);
-			break;
-		}
-	}
-	update_occ();
+	apply_move(m_position, m);
+	m_white_turn = !m_white_turn;
 	m_update_view = true;
+
+	if (in_checkmate(m_position, m_white_turn)) { std::println("CHECKMATE!"); }
+	if (in_stalemate(m_position, m_white_turn)) { std::println("STALEMATE!"); }
 }
 } // namespace CastleMate

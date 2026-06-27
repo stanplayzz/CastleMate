@@ -15,5 +15,10 @@ constexpr auto pop_lsb(std::uint64_t& bb) -> std::size_t {
 	return index;
 }
 
+constexpr auto replace_bit(std::uint64_t& bb, int from, int to) {
+	clear_bit(bb, from);
+	set_bit(bb, to);
+}
+
 constexpr auto sq(int rank, int file) -> int { return (rank * 8) + file; }
 } // namespace CastleMate
