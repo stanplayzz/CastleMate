@@ -8,7 +8,7 @@ class Board {
   public:
 	Board();
 
-	void click_square(glm::ivec2 square, SquareOutline& outline);
+	void click_square(int sq, SquareOutline& outline, bool white_bottom);
 
 	void set_promotion(Piece p);
 

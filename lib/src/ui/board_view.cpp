@@ -28,7 +28,7 @@ void BoardView::draw(le::IRenderer& renderer) const {
 
 	for (auto const& p : m_piece_sprites) { p.draw(renderer); }
 
-	if (m_app->get_board().get_selected_square()) { m_square_outline->draw(renderer); }
+	m_square_outline->draw(renderer);
 
 	if (m_show_promotion) {
 		m_promotion_ui.border.draw(renderer);
@@ -38,7 +38,7 @@ void BoardView::draw(le::IRenderer& renderer) const {
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-void BoardView::update_board(std::uint64_t const* bitboards) {
+void BoardView::update_board(std::uint64_t const* bitboards, bool white_bottom) {
 	m_pieces.fill(COUNT_);
 	auto bb = bitboards[WP];
 	while (bb) { m_pieces.at(pop_lsb(bb)) = WP; }
@@ -66,7 +66,7 @@ void BoardView::update_board(std::uint64_t const* bitboards) {
 	bb = bitboards[BK];
 	while (bb) { m_pieces.at(pop_lsb(bb)) = BK; }
 
-	update_pieces();
+	update_pieces(white_bottom);
 }
 // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
@@ -85,7 +85,7 @@ void BoardView::load_piece_texture() {
 	if (!m_piece_texture) { throw std::runtime_error{"Failed to load texture"}; }
 }
 
-void BoardView::update_pieces() {
+void BoardView::update_pieces(bool white_bottom) {
 	if (m_pieces.empty()) { return; }
 	m_piece_sprites.clear();
 
@@ -109,6 +109,11 @@ void BoardView::update_pieces() {
 
 		auto file = static_cast<float>(i & 7);
 		auto rank = static_cast<float>(i >> 3);
+
+		if (!white_bottom) {
+			file = 7 - file;
+			rank = 7 - rank;
+		}
 
 		auto pos = glm::vec2{file * tile_size_v.x, rank * tile_size_v.x};
 		pos -= viewport_v.world_size * 0.5f - glm::vec2{tile_size_v * 0.5f};

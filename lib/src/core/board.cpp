@@ -9,19 +9,24 @@ Board::Board() {
 	load_board();
 }
 
-void Board::click_square(glm::ivec2 square, SquareOutline& outline) {
+void Board::click_square(int sq, SquareOutline& outline, bool white_bottom) {
 	if (m_pending_move) { return; }
-	auto i = (square.y * 8) + square.x;
+
+	auto display_sq = white_bottom ? sq : 63 - sq;
+
 	if (m_selected_sq.has_value()) {
-		move({.from = *m_selected_sq, .to = i});
+		move({.from = *m_selected_sq, .to = sq});
 		m_selected_sq = std::nullopt;
-	} else if (get_bit(m_position.occ, i)) {
-		if ((get_bit(m_position.white_occ, i) && !m_white_turn) || (get_bit(m_position.black_occ, i) && m_white_turn)) {
+	} else if (get_bit(m_position.occ, sq)) {
+		if ((get_bit(m_position.white_occ, sq) && !m_white_turn) ||
+			(get_bit(m_position.black_occ, sq) && m_white_turn)) {
 			return;
 		}
-		m_selected_sq = i;
-		outline.set_position((glm::vec2{square - glm::ivec2{4, 4}} * tile_size_v) + (tile_size_v * 0.5f));
+		m_selected_sq = sq;
+		auto pos = glm::ivec2{display_sq % 8, display_sq / 8};
+		outline.set_position((glm::vec2{pos - glm::ivec2{4, 4}} * tile_size_v) + (tile_size_v * 0.5f));
 	}
+	outline.should_draw = m_selected_sq.has_value();
 }
 
 void Board::set_promotion(Piece p) {

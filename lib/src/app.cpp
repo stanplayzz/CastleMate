@@ -1,8 +1,9 @@
 #include "castlemate/app.hpp"
 #include "castlemate/build_version.hpp"
+#include "castlemate/states/gameplay.hpp"
+#include "castlemate/states/menu.hpp"
 #include "castlemate/theme.hpp"
 #include "castlemate/utils/constants.hpp"
-#include "castlemate/utils/conversion.hpp"
 #include <le2d/util.hpp>
 
 namespace CastleMate {
@@ -18,32 +19,24 @@ App::App() {
 	m_context = le::Context::create(context_create_info_v);
 	create_data_loader();
 	Theme::initialize(*m_data_loader);
-
-	m_board_view = std::make_unique<BoardView>(this);
-	m_board_view->update_board(static_cast<std::uint64_t const*>(m_board.get_bitboard()));
 }
 
 void App::run() {
+	m_state_manager.set_state(std::make_unique<Menu>(this));
+
 	while (m_context->is_running()) {
 		m_context->next_frame();
 
-		handle_input();
+		m_state_manager.update();
 
-		if (m_board.should_update_view()) {
-			m_board_view->update_board(static_cast<std::uint64_t const*>(m_board.get_bitboard()));
-		}
-
-		if (auto white = m_board.show_promotion_view()) {
-			m_board_view->show_promotion(*white);
-		} else {
-			m_board_view->hide_promotion();
-		}
-
-		auto& renderer = m_context->begin_render(Theme::from_name<kvf::Color>({"background"}));
+		auto& renderer = m_context->begin_render(m_state_manager.get_clear_color());
 		renderer.viewport = viewport_v;
-		m_board_view->draw(renderer);
+
+		m_state_manager.draw(renderer);
 
 		m_context->present();
+
+		if (m_should_close) { break; }
 	}
 
 	auto const waiter = m_context->create_waiter();
@@ -54,27 +47,5 @@ void App::create_data_loader() {
 	if (assets_dir.empty()) { throw std::runtime_error{"Failed to find assets dir"}; }
 
 	m_data_loader = std::make_unique<le::FileDataLoader>(assets_dir);
-}
-
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
-void App::handle_input() {
-	for (auto const& e : m_context->event_queue()) {
-		if (auto const* mouse = std::get_if<le::event::CursorPos>(&e)) { m_mouse_pos = mouse->window; }
-		if (auto const* mouse = std::get_if<le::event::MouseButton>(&e)) {
-			if (mouse->button == GLFW_MOUSE_BUTTON_1 && mouse->action == GLFW_RELEASE) {
-				if (auto white = m_board.show_promotion_view()) {
-					for (std::size_t i = 0; i < m_board_view->get_promotion_ui().choices.size(); i++) {
-						auto& choice = m_board_view->get_promotion_ui().choices.at(i);
-						if (choice.bounding_rect().contains(m_mouse_pos - (viewport_v.world_size * 0.5f))) {
-							auto const pieces = *white ? std::array{WR, WN, WB, WQ} : std::array{BR, BN, BB, BQ};
-							m_board.set_promotion(pieces.at(i));
-						}
-					}
-				} else {
-					m_board.click_square(screen_to_sq(m_mouse_pos), m_board_view->get_square_outline());
-				}
-			}
-		}
-	}
 }
 } // namespace CastleMate

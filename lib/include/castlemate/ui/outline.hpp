@@ -13,6 +13,8 @@ class SquareOutline {
 
 	void set_position(glm::vec2 pos);
 
+	bool should_draw{false};
+
   private:
 	gsl::not_null<App const*> m_app;
 

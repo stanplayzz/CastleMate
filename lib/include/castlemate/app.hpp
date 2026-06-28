@@ -1,6 +1,5 @@
 #pragma once
-#include "castlemate/core/board.hpp"
-#include "castlemate/ui/board_view.hpp"
+#include "castlemate/state.hpp"
 #include <le2d/context.hpp>
 #include <le2d/file_data_loader.hpp>
 
@@ -19,19 +18,18 @@ class App {
 		return m_context->create_asset_loader(&get_data_loader());
 	}
 
-	[[nodiscard]] auto get_board() const -> Board const& { return m_board; }
+	[[nodiscard]] auto get_state_manager() -> StateManager& { return m_state_manager; }
+
+	void close() const { m_should_close = true; }
 
   private:
 	void create_data_loader();
-	void handle_input();
 
 	std::unique_ptr<le::Context> m_context{};
 	std::unique_ptr<le::IDataLoader> m_data_loader{};
 
-	Board m_board{};
-	std::unique_ptr<BoardView> m_board_view{};
+	StateManager m_state_manager{};
 
-	// input
-	glm::vec2 m_mouse_pos{};
+	mutable bool m_should_close{};
 };
 } // namespace CastleMate

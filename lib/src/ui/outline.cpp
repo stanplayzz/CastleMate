@@ -16,6 +16,7 @@ SquareOutline::SquareOutline(gsl::not_null<App const*> app) : m_app(app) {
 }
 
 void SquareOutline::draw(le::IRenderer& renderer) const {
+	if (!should_draw) { return; }
 	renderer.set_shader(*m_shader);
 	m_quad.draw(renderer);
 	renderer.set_shader(m_app->get_context().get_default_shader());

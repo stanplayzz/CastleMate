@@ -20,7 +20,7 @@ class BoardView {
 	void draw(le::IRenderer& renderer) const;
 
 	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
-	void update_board(std::uint64_t const* bitboards);
+	void update_board(std::uint64_t const* bitboards, bool white_bottom);
 
 	void show_promotion(bool white) {
 		if (!m_show_promotion) {
@@ -37,7 +37,7 @@ class BoardView {
   private:
 	void create_board();
 	void load_piece_texture();
-	void update_pieces();
+	void update_pieces(bool white_bottom);
 	void create_promotion(bool white);
 
 	gsl::not_null<App const*> m_app;
