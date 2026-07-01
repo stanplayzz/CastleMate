@@ -23,5 +23,7 @@ class Gameplay : public State {
 	std::unique_ptr<BoardView> m_board_view{};
 
 	bool m_white_bottom{};
+
+	bool m_go_main_menu{};
 };
 } // namespace CastleMate

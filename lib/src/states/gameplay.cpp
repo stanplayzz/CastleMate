@@ -1,5 +1,6 @@
 #include "castlemate/states/gameplay.hpp"
 #include "castlemate/app.hpp"
+#include "castlemate/states/menu.hpp"
 #include "castlemate/utils/conversion.hpp"
 
 namespace CastleMate {
@@ -21,6 +22,9 @@ auto Gameplay::update() -> std::unique_ptr<State> {
 		m_board_view->hide_promotion();
 	}
 
+	if (auto ending = m_board.get_ending()) { m_board_view->end_game(*ending); }
+
+	if (m_go_main_menu) { return std::make_unique<Menu>(m_app); }
 	return nullptr;
 }
 
@@ -31,7 +35,7 @@ void Gameplay::handle_input() {
 	for (auto const& e : m_app->get_context().event_queue()) {
 		if (auto const* mouse = std::get_if<le::event::CursorPos>(&e)) { m_mouse_pos = mouse->window; }
 		if (auto const* mouse = std::get_if<le::event::MouseButton>(&e)) {
-			if (mouse->button == GLFW_MOUSE_BUTTON_1 && mouse->action == GLFW_RELEASE) {
+			if (mouse->button == GLFW_MOUSE_BUTTON_1 && mouse->action == GLFW_RELEASE && !m_board.get_ending()) {
 				if (auto white = m_board.show_promotion_view()) {
 					for (std::size_t i = 0; i < m_board_view->get_promotion_ui().choices.size(); i++) {
 						auto& choice = m_board_view->get_promotion_ui().choices.at(i);
@@ -47,6 +51,12 @@ void Gameplay::handle_input() {
 					sq = m_white_bottom ? sq : 63 - sq;
 					m_board.click_square(sq, m_board_view->get_square_outline(), m_white_bottom);
 				}
+			} else {
+			}
+		}
+		if (m_board.get_ending()) {
+			if (auto const* key = std::get_if<le::event::Key>(&e)) {
+				if (key->action == GLFW_RELEASE) { m_go_main_menu = true; }
 			}
 		}
 	}

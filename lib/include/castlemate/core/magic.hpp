@@ -2,6 +2,7 @@
 #include "castlemate/utils/bit_math.hpp"
 #include <array>
 #include <random>
+#include <thread>
 #include <vector>
 
 namespace CastleMate {
@@ -139,10 +140,10 @@ struct Magic {
 	int shift{};
 	std::vector<std::uint64_t> table{};
 };
-
 constexpr auto init_magics(bool diagonal) -> std::array<Magic, 64> {
 	auto magics = std::array<Magic, 64>{};
-	for (auto sq = 0; sq < 64; sq++) {
+
+	auto init_square = [&](int sq) {
 		auto& m = magics.at(static_cast<std::size_t>(sq));
 		m.mask = diagonal ? bishop_mask(sq) : rook_mask(sq);
 		auto bits = std::popcount(m.mask);
@@ -156,7 +157,19 @@ constexpr auto init_magics(bool diagonal) -> std::array<Magic, 64> {
 			auto idx = (blockers * m.magic) >> m.shift;
 			m.table[idx] = diagonal ? bishop_attack_ray(sq, blockers) : rook_attack_ray(sq, blockers);
 		}
+	};
+
+	auto num_threads = std::max(1u, std::thread::hardware_concurrency());
+	auto threads = std::vector<std::thread>{};
+	threads.reserve(num_threads);
+
+	for (unsigned t = 0; t < num_threads; t++) {
+		threads.emplace_back([t, num_threads, &init_square]() {
+			for (int sq = static_cast<int>(t); sq < 64; sq += static_cast<int>(num_threads)) { init_square(sq); }
+		});
 	}
+
+	for (auto& th : threads) { th.join(); }
 
 	return magics;
 }

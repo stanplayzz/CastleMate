@@ -1,4 +1,5 @@
 #pragma once
+#include "castlemate/core/game_ending.hpp"
 #include "castlemate/core/move.hpp"
 #include "castlemate/core/position.hpp"
 #include "castlemate/ui/outline.hpp"
@@ -30,6 +31,10 @@ class Board {
 		return m_should_promote ? std::optional<bool>{m_white_turn} : std::nullopt;
 	}
 
+	[[nodiscard]] auto get_ending() const -> std::optional<GameEnding> {
+		return m_has_ended ? std::optional<GameEnding>(m_ending) : std::nullopt;
+	}
+
   private:
 	void load_board();
 	void update_occ();
@@ -46,5 +51,8 @@ class Board {
 
 	bool m_should_promote{};
 	std::optional<Move> m_pending_move{};
+
+	GameEnding m_ending{};
+	bool m_has_ended{};
 };
 } // namespace CastleMate

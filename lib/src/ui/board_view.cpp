@@ -9,6 +9,9 @@ BoardView::BoardView(gsl::not_null<App const*> app) : m_app(app) {
 	create_board();
 	load_piece_texture();
 	m_square_outline = std::make_unique<SquareOutline>(app);
+
+	m_font = app->create_asset_loader().load<le::IFont>("fonts/CormorantGaramond.ttf");
+	if (!m_font) { throw std::runtime_error{"Failed to load font"}; }
 }
 
 void BoardView::draw(le::IRenderer& renderer) const {
@@ -35,6 +38,9 @@ void BoardView::draw(le::IRenderer& renderer) const {
 		m_promotion_ui.background.draw(renderer);
 		for (auto const& c : m_promotion_ui.choices) { c.draw(renderer); }
 	}
+
+	m_end_text.draw(renderer);
+	m_end_sub_text.draw(renderer);
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -69,6 +75,21 @@ void BoardView::update_board(std::uint64_t const* bitboards, bool white_bottom) 
 	update_pieces(white_bottom);
 }
 // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+void BoardView::end_game(GameEnding ending) {
+	auto string = std::string{};
+	if (ending.draw) {
+		string = "DRAW!";
+	} else {
+		string = ending.white_won ? "WHITE WON!" : "BLACK WON!";
+	}
+
+	m_end_text.set_string(*m_font, string, {.height = le::TextHeight{70}});
+	m_end_text.tint = Theme::from_name<kvf::Color>({"end_text"});
+	m_end_sub_text.set_string(*m_font, "PRESS ANY BUTTON TO RETURN", {.height = le::TextHeight{30}});
+	m_end_sub_text.tint = Theme::from_name<kvf::Color>({"end_text"});
+	m_end_sub_text.transform.position.y = -50;
+}
 
 void BoardView::create_board() {
 	m_board.create({viewport_v.world_size});

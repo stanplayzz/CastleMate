@@ -1,8 +1,10 @@
 #pragma once
+#include "castlemate/core/game_ending.hpp"
 #include "castlemate/core/piece.hpp"
 #include "castlemate/ui/outline.hpp"
 #include <le2d/drawable/shape.hpp>
 #include <le2d/drawable/sprite.hpp>
+#include <le2d/drawable/text.hpp>
 
 namespace CastleMate {
 class App;
@@ -34,6 +36,8 @@ class BoardView {
 
 	[[nodiscard]] auto get_promotion_ui() -> PromotionUI& { return m_promotion_ui; }
 
+	void end_game(GameEnding ending);
+
   private:
 	void create_board();
 	void load_piece_texture();
@@ -53,5 +57,9 @@ class BoardView {
 
 	bool m_show_promotion{};
 	PromotionUI m_promotion_ui{};
+
+	std::unique_ptr<le::IFont> m_font{};
+	le::drawable::Text m_end_text{};
+	le::drawable::Text m_end_sub_text{};
 };
 } // namespace CastleMate

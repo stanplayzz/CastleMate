@@ -4,10 +4,7 @@
 #include <print>
 
 namespace CastleMate {
-Board::Board() {
-	queen_move(0, 0, 0); // used for initializing precomputed moves
-	load_board();
-}
+Board::Board() { load_board(); }
 
 void Board::click_square(int sq, SquareOutline& outline, bool white_bottom) {
 	if (m_pending_move) { return; }
@@ -90,7 +87,13 @@ void Board::finish_move(Move m) {
 	m_white_turn = !m_white_turn;
 	m_update_view = true;
 
-	if (in_checkmate(m_position, m_white_turn)) { std::println("CHECKMATE!"); }
-	if (in_stalemate(m_position, m_white_turn)) { std::println("STALEMATE!"); }
+	if (in_checkmate(m_position, m_white_turn)) {
+		m_ending.white_won = !m_white_turn;
+		m_has_ended = true;
+	}
+	if (in_stalemate(m_position, m_white_turn)) {
+		m_ending.draw = true;
+		m_has_ended = true;
+	}
 }
 } // namespace CastleMate

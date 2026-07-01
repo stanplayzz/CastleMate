@@ -14,7 +14,7 @@ void main() {
     vec2 board = in_uv * cells;
 
     ivec2 cell = ivec2(floor(board));
-    bool checker = ((cell.x + cell.y) % 2) == 1;
+    bool checker = ((cell.x + cell.y) % 2) == 0;
 
     out_color = checker ? colors.lightColor : colors.darkColor;
 }
