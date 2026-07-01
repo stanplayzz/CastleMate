@@ -180,15 +180,19 @@ constexpr auto apply_move(Position& pos, Move m) {
 	auto is_white = get_bit(pos.bb[WP], m.from);
 	auto is_black = get_bit(pos.bb[BP], m.from);
 
+	auto captured = get_bit(pos.occ, m.to);
+
 	for (auto& bb : pos.bb) { clear_bit(bb, m.to); }
 
 	if (is_white && m.to == pos.en_passant) {
 		clear_bit(pos.bb[BP], m.to - 8);
 		clear_bit(pos.occ, m.to - 8);
+		captured = true;
 	}
 	if (is_black && m.to == pos.en_passant) {
 		clear_bit(pos.bb[WP], m.to + 8);
 		clear_bit(pos.occ, m.to + 8);
+		captured = true;
 	}
 
 	for (auto& bb : pos.bb) {
@@ -213,6 +217,8 @@ constexpr auto apply_move(Position& pos, Move m) {
 	pos.white_occ = bb[WP] | bb[WR] | bb[WN] | bb[WB] | bb[WQ] | bb[WK];
 	pos.black_occ = bb[BP] | bb[BR] | bb[BN] | bb[BB] | bb[BQ] | bb[BK];
 	pos.occ = pos.white_occ | pos.black_occ;
+
+	return captured;
 }
 
 constexpr auto get_legal_moves(Position pos, int sq) -> std::vector<int> {

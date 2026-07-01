@@ -1,10 +1,16 @@
 #include "castlemate/core/board.hpp"
+#include "castlemate/app.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include "castlemate/utils/constants.hpp"
-#include <print>
 
 namespace CastleMate {
-Board::Board() { load_board(); }
+Board::Board(gsl::not_null<App*> app) : m_app(app) {
+	load_board();
+
+	m_move_buffer = m_app->create_asset_loader().load<le::IAudioBuffer>("sounds/move.wav");
+	m_capture_buffer = m_app->create_asset_loader().load<le::IAudioBuffer>("sounds/capture.wav");
+	if (!m_move_buffer || !m_capture_buffer) { throw std::runtime_error{"Failed to load audio buffer"}; }
+}
 
 void Board::click_square(int sq, SquareOutline& outline, bool white_bottom) {
 	if (m_pending_move) { return; }
@@ -83,7 +89,7 @@ void Board::move(Move m) {
 }
 
 void Board::finish_move(Move m) {
-	apply_move(m_position, m);
+	auto capture = apply_move(m_position, m);
 	m_white_turn = !m_white_turn;
 	m_update_view = true;
 
@@ -94,6 +100,12 @@ void Board::finish_move(Move m) {
 	if (in_stalemate(m_position, m_white_turn)) {
 		m_ending.draw = true;
 		m_has_ended = true;
+	}
+
+	if (!capture) {
+		m_app->get_context().get_audio_mixer().play_sfx(m_move_buffer.get());
+	} else {
+		m_app->get_context().get_audio_mixer().play_sfx(m_capture_buffer.get());
 	}
 }
 } // namespace CastleMate

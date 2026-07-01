@@ -35,7 +35,7 @@ struct MenuButton {
 
 class Menu : public State {
   public:
-	Menu(gsl::not_null<App const*> app);
+	Menu(gsl::not_null<App*> app);
 
 	auto update() -> std::unique_ptr<State> override;
 
@@ -48,7 +48,7 @@ class Menu : public State {
   private:
 	void create_choose_color_menu();
 
-	gsl::not_null<App const*> m_app;
+	gsl::not_null<App*> m_app;
 
 	glm::vec2 m_mouse_pos{};
 

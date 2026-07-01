@@ -3,11 +3,12 @@
 #include "castlemate/core/move.hpp"
 #include "castlemate/core/position.hpp"
 #include "castlemate/ui/outline.hpp"
+#include <le2d/resource/audio_buffer.hpp>
 
 namespace CastleMate {
 class Board {
   public:
-	Board();
+	Board(gsl::not_null<App*> app);
 
 	void click_square(int sq, SquareOutline& outline, bool white_bottom);
 
@@ -42,6 +43,8 @@ class Board {
 	void move(Move m);
 	void finish_move(Move m);
 
+	gsl::not_null<App*> m_app;
+
 	Position m_position;
 
 	std::optional<int> m_selected_sq{};
@@ -54,5 +57,8 @@ class Board {
 
 	GameEnding m_ending{};
 	bool m_has_ended{};
+
+	std::unique_ptr<le::IAudioBuffer> m_move_buffer{};
+	std::unique_ptr<le::IAudioBuffer> m_capture_buffer{};
 };
 } // namespace CastleMate

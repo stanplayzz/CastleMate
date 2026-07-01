@@ -4,7 +4,7 @@
 #include "castlemate/utils/conversion.hpp"
 
 namespace CastleMate {
-Menu::Menu(gsl::not_null<App const*> app) : m_app(app) {
+Menu::Menu(gsl::not_null<App*> app) : m_app(app) {
 	queen_move(0, 0, 0);
 
 	m_font = app->create_asset_loader().load<le::IFont>("fonts/CormorantGaramond.ttf");
