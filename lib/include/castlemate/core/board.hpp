@@ -14,6 +14,8 @@ class Board {
 
 	void set_promotion(Piece p);
 
+	void set_on_move(std::function<void(std::string const&, bool)> cb) { m_on_move = std::move(cb); }
+
 	[[nodiscard]] auto get_selected_square() const -> std::optional<int> { return m_selected_sq; }
 
 	[[nodiscard]] auto get_bitboard() const -> std::uint64_t const* {
@@ -60,5 +62,7 @@ class Board {
 
 	std::unique_ptr<le::IAudioBuffer> m_move_buffer{};
 	std::unique_ptr<le::IAudioBuffer> m_capture_buffer{};
+
+	std::function<void(std::string const&, bool)> m_on_move{};
 };
 } // namespace CastleMate

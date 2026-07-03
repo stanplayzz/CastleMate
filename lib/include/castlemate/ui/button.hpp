@@ -32,8 +32,8 @@ struct TextButton : Widget {
 		text.transform.position = background.transform.position - glm::vec2{0, text.get_size().y * 0.5f};
 	}
 
-	void set_string(le::IFont& font, std::string const& string) {
-		text.set_string(font, string);
+	void set_string(le::IFont& font, std::string const& string, uint8_t char_size = 120) {
+		text.set_string(font, string, {.height = le::TextHeight{char_size}});
 		set_position(background.transform.position);
 	}
 };

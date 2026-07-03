@@ -15,8 +15,9 @@ BoardView::BoardView(gsl::not_null<App const*> app) : m_app(app) {
 }
 
 void BoardView::draw(le::IRenderer& renderer) const {
-	renderer.set_shader(*m_board_shader);
+	renderer.view.position.x -= (board_size_v.x - viewport_v.world_size.x) * 0.5f;
 
+	renderer.set_shader(*m_board_shader);
 	struct BoardColors {
 		glm::vec4 light{};
 		glm::vec4 dark{};
@@ -41,6 +42,8 @@ void BoardView::draw(le::IRenderer& renderer) const {
 
 	m_end_text.draw(renderer);
 	m_end_sub_text.draw(renderer);
+
+	renderer.view.position.x += (board_size_v.x - viewport_v.world_size.x) * 0.5f;
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -84,15 +87,15 @@ void BoardView::end_game(GameEnding ending) {
 		string = ending.white_won ? "WHITE WON!" : "BLACK WON!";
 	}
 
-	m_end_text.set_string(*m_font, string, {.height = le::TextHeight{70}});
+	m_end_text.set_string(*m_font, string, {.height = le::TextHeight{140}});
 	m_end_text.tint = Theme::from_name<kvf::Color>({"end_text"});
-	m_end_sub_text.set_string(*m_font, "PRESS ANY BUTTON TO RETURN", {.height = le::TextHeight{30}});
+	m_end_sub_text.set_string(*m_font, "PRESS ANY BUTTON TO RETURN", {.height = le::TextHeight{60}});
 	m_end_sub_text.tint = Theme::from_name<kvf::Color>({"end_text"});
 	m_end_sub_text.transform.position.y = -50;
 }
 
 void BoardView::create_board() {
-	m_board.create({viewport_v.world_size});
+	m_board.create({board_size_v});
 
 	auto const vert = m_app->get_data_loader().load_spir_v("shaders/board.vert.spv");
 	auto const frag = m_app->get_data_loader().load_spir_v("shaders/board.frag.spv");
@@ -137,7 +140,7 @@ void BoardView::update_pieces(bool white_bottom) {
 		}
 
 		auto pos = glm::vec2{file * tile_size_v.x, rank * tile_size_v.x};
-		pos -= viewport_v.world_size * 0.5f - glm::vec2{tile_size_v * 0.5f};
+		pos -= board_size_v * 0.5f - glm::vec2{tile_size_v * 0.5f};
 
 		m_piece_sprites.back().transform.position = pos;
 	}
@@ -146,7 +149,7 @@ void BoardView::update_pieces(bool white_bottom) {
 void BoardView::create_promotion(bool white) {
 	auto const pieces = white ? std::array{WR, WN, WB, WQ} : std::array{BR, BN, BB, BQ};
 
-	auto sprite_size = glm::vec2{viewport_v.world_size.y * 0.14f};
+	auto sprite_size = glm::vec2{board_size_v.y * 0.14f};
 
 	for (std::size_t i = 0; i < 4; i++) {
 		constexpr auto type_map = std::array<int, 6>{5, 3, 2, 4, 1, 0};

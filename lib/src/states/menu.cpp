@@ -14,24 +14,24 @@ Menu::Menu(gsl::not_null<App*> app) : m_app(app) {
 	m_quit_texture = app->create_asset_loader().load<le::ITexture>("images/quit_button.png");
 	if (!m_play_texture || !m_quit_texture) { throw std::runtime_error{"Failed to load texture"}; }
 
-	m_play_button.create_sprite({200, 100}, false);
+	m_play_button.create_sprite({800, 400}, false);
 	m_play_button.set_texture(*m_play_texture);
-	m_quit_button.set_position({0, -10});
+	m_quit_button.set_position({0, -40});
 	m_play_button.on_click = [this]() {
 		m_choose_color = true;
 	};
-	m_quit_button.create_sprite({200, 100}, false);
+	m_quit_button.create_sprite({800, 400}, false);
 	m_quit_button.set_texture(*m_quit_texture);
-	m_quit_button.set_position({0, -120});
+	m_quit_button.set_position({0, -480});
 	m_quit_button.on_click = [this]() {
 		m_app->close();
 	};
 
 	m_logo_texture = m_app->create_asset_loader().load<le::ITexture>("images/castlemate_logo.png");
 	if (!m_logo_texture) { throw std::runtime_error{"Failed to load texture"}; }
-	m_logo.set_base_size(glm::vec2{400});
+	m_logo.set_base_size(glm::vec2{1600});
 	m_logo.set_texture(m_logo_texture.get());
-	m_logo.transform.position.y += 150;
+	m_logo.transform.position.y += 600;
 
 	create_choose_color_menu();
 }
@@ -87,34 +87,34 @@ void Menu::draw(le::IRenderer& renderer) const {
 
 void Menu::create_choose_color_menu() {
 	auto& menu = m_choose_color_menu;
-	menu.background.create({300, 300}, 2);
+	menu.background.create({1200, 1200}, 8);
 
 	m_piece_texture = m_app->create_asset_loader().load<le::ITexture>("images/piece_atlas.png");
 	if (!m_piece_texture) { throw std::runtime_error{"Failed to load texture"}; }
-	constexpr auto sprite_size = 128.f;
-	menu.option_background.create({sprite_size * 2, sprite_size}, 1);
-	menu.option_background.set_position({0, 64});
-	menu.white.create_sprite({sprite_size, sprite_size}, 0);
+	constexpr auto sprite_size = 512.f;
+	menu.option_background.create({sprite_size * 2, sprite_size}, 4);
+	menu.option_background.set_position({0, 256});
+	menu.white.create_sprite({sprite_size, sprite_size}, false);
 	menu.white.background.tint = kvf::Color{glm::vec4{0, 0, 0, 0}};
-	menu.black.create_sprite({sprite_size, sprite_size}, 0);
+	menu.black.create_sprite({sprite_size, sprite_size}, false);
 	menu.black.background.tint = kvf::Color{glm::vec4{0, 0, 0, 0}};
 	menu.white.set_texture(*m_piece_texture, {.lt = {0, 0}, .rb = {1.f / 6.f, 1.f / 2.f}});
 	menu.black.set_texture(*m_piece_texture, {.lt = {0, 1.f / 2.f}, .rb = {1.f / 6.f, 1.f}});
-	menu.white.set_position({-sprite_size * 0.5f, 64});
-	menu.black.set_position({sprite_size * 0.5f, 64});
+	menu.white.set_position({-sprite_size * 0.5f, 256});
+	menu.black.set_position({sprite_size * 0.5f, 256});
 
 	menu.selected.create({sprite_size, sprite_size});
 	menu.selected.tint = kvf::Color{glm::vec4{0, 0, 0, 0.2f}};
 	menu.selected.transform.position = menu.white.sprite.transform.position;
 
-	menu.text.set_string(*m_font, "WHITE", {.height = le::TextHeight{20}});
+	menu.text.set_string(*m_font, "WHITE", {.height = le::TextHeight{80}});
 	menu.text.tint = kvf::black_v;
-	menu.text.transform.position = glm::vec2{0, -60};
+	menu.text.transform.position = glm::vec2{0, -240};
 
-	menu.start.create({200, 50}, 1);
-	menu.start.set_string(*m_font, "PLAY");
+	menu.start.create({800, 200}, 2);
+	menu.start.set_string(*m_font, "PLAY", 120);
 	menu.start.text.tint = kvf::black_v;
-	menu.start.set_position({0, -100});
+	menu.start.set_position({0, -400});
 	menu.start.on_click = [this]() {
 		m_to_game = true;
 	};

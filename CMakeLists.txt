@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-set(build_version 0.0.1)
+include(version.cmake)
 set(package_name castlemate)
 
 project(${package_name} VERSION ${build_version} LANGUAGES CXX)

@@ -2,6 +2,7 @@
 #include "castlemate/core/board.hpp"
 #include "castlemate/state.hpp"
 #include "castlemate/ui/board_view.hpp"
+#include "castlemate/ui/side_menu.hpp"
 
 namespace CastleMate {
 class App;
@@ -21,6 +22,7 @@ class Gameplay : public State {
 
 	std::unique_ptr<Board> m_board{};
 	std::unique_ptr<BoardView> m_board_view{};
+	std::unique_ptr<SideMenu> m_side_menu{};
 
 	bool m_white_bottom{};
 

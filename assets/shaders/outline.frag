@@ -13,7 +13,7 @@ void main() {
 
     float edge_dist = min(min(in_uv.x, 1.0 - in_uv.x), min(in_uv.y, 1.0 - in_uv.y));
 
-    if (edge_dist < outline_thickness) {
+    if (edge_dist <= outline_thickness) {
         out_color = in_tint;
     } else {
         discard;

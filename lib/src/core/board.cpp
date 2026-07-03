@@ -1,5 +1,6 @@
 #include "castlemate/core/board.hpp"
 #include "castlemate/app.hpp"
+#include "castlemate/utils/algebraic.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include "castlemate/utils/constants.hpp"
 
@@ -89,6 +90,8 @@ void Board::move(Move m) {
 }
 
 void Board::finish_move(Move m) {
+	auto notation = to_algebraic(m, m_position);
+
 	auto capture = apply_move(m_position, m);
 	m_white_turn = !m_white_turn;
 	m_update_view = true;
@@ -107,5 +110,7 @@ void Board::finish_move(Move m) {
 	} else {
 		m_app->get_context().get_audio_mixer().play_sfx(m_capture_buffer.get());
 	}
+
+	if (m_on_move) { m_on_move(notation, !m_white_turn); }
 }
 } // namespace CastleMate

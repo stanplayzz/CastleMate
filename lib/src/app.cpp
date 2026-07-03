@@ -10,7 +10,7 @@ namespace CastleMate {
 namespace {
 auto const window_title_v = std::format("CastleMate {}", buildVersionStr);
 auto const context_create_info_v = le::Context::CreateInfo{
-	.window = le::WindowInfo{.size = {512, 512}, .title = window_title_v},
+	.window = le::WindowInfo{.size = {576, 512}, .title = window_title_v},
 };
 } // namespace
 
