@@ -176,23 +176,30 @@ constexpr auto promote(Position& pos, Move m, bool white) {
 	set_bit(pos.bb[m.promotion], m.to); // NOLINT
 }
 
-constexpr auto apply_move(Position& pos, Move m) {
+constexpr auto apply_move(Position& pos, Move m) -> std::optional<Piece> {
 	auto is_white = get_bit(pos.bb[WP], m.from);
 	auto is_black = get_bit(pos.bb[BP], m.from);
 
-	auto captured = get_bit(pos.occ, m.to);
+	std::optional<Piece> captured;
+
+	for (std::size_t i = 0; i < COUNT_; ++i) {
+		if (get_bit(pos.bb[i], m.to)) { // NOLINT
+			captured = static_cast<Piece>(i);
+			break;
+		}
+	}
 
 	for (auto& bb : pos.bb) { clear_bit(bb, m.to); }
 
 	if (is_white && m.to == pos.en_passant) {
 		clear_bit(pos.bb[BP], m.to - 8);
 		clear_bit(pos.occ, m.to - 8);
-		captured = true;
+		captured = BP;
 	}
 	if (is_black && m.to == pos.en_passant) {
 		clear_bit(pos.bb[WP], m.to + 8);
 		clear_bit(pos.occ, m.to + 8);
-		captured = true;
+		captured = WP;
 	}
 
 	for (auto& bb : pos.bb) {

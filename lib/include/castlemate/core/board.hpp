@@ -15,6 +15,7 @@ class Board {
 	void set_promotion(Piece p);
 
 	void set_on_move(std::function<void(std::string const&, bool)> cb) { m_on_move = std::move(cb); }
+	void set_on_capture(std::function<void(Piece)> cb) { m_on_capture = std::move(cb); }
 
 	[[nodiscard]] auto get_selected_square() const -> std::optional<int> { return m_selected_sq; }
 
@@ -64,5 +65,6 @@ class Board {
 	std::unique_ptr<le::IAudioBuffer> m_capture_buffer{};
 
 	std::function<void(std::string const&, bool)> m_on_move{};
+	std::function<void(Piece)> m_on_capture;
 };
 } // namespace CastleMate

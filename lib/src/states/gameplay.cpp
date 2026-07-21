@@ -10,6 +10,9 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white) : m_app(app), m_white_bo
 	m_board->set_on_move([this](std::string const& notation, bool white) {
 		m_side_menu->append_move(notation, white);
 	});
+	m_board->set_on_capture([this](Piece p) {
+		m_side_menu->add_capture(p);
+	});
 	m_board_view = std::make_unique<BoardView>(app);
 	m_board_view->update_board(static_cast<std::uint64_t const*>(m_board->get_bitboard()), m_white_bottom);
 }

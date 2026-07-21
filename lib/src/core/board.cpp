@@ -109,6 +109,7 @@ void Board::finish_move(Move m) {
 		m_app->get_context().get_audio_mixer().play_sfx(m_move_buffer.get());
 	} else {
 		m_app->get_context().get_audio_mixer().play_sfx(m_capture_buffer.get());
+		if (m_on_capture && capture != COUNT_) { m_on_capture(*capture); }
 	}
 
 	if (m_on_move) { m_on_move(notation, !m_white_turn); }
