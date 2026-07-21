@@ -31,7 +31,7 @@ Menu::Menu(gsl::not_null<App*> app) : m_app(app) {
 	if (!m_logo_texture) { throw std::runtime_error{"Failed to load texture"}; }
 	m_logo.set_base_size(glm::vec2{1600});
 	m_logo.set_texture(m_logo_texture.get());
-	m_logo.transform.position.y += 600;
+	m_logo.transform.position.y += 700;
 
 	create_choose_color_menu();
 }
@@ -53,7 +53,7 @@ auto Menu::update() -> std::unique_ptr<State> {
 															   : m_choose_color_menu.black.sprite.transform.position;
 						m_choose_color_menu.text.set_string(*m_font,
 															m_choose_color_menu.white_selected ? "WHITE" : "BLACK",
-															{.height = le::TextHeight{20}});
+															{.height = le::TextHeight{100}});
 						return {};
 					}
 					if (m_choose_color_menu.start.hovered(world_mouse_pos)) {
@@ -107,11 +107,11 @@ void Menu::create_choose_color_menu() {
 	menu.selected.tint = kvf::Color{glm::vec4{0, 0, 0, 0.2f}};
 	menu.selected.transform.position = menu.white.sprite.transform.position;
 
-	menu.text.set_string(*m_font, "WHITE", {.height = le::TextHeight{80}});
+	menu.text.set_string(*m_font, "WHITE", {.height = le::TextHeight{100}});
 	menu.text.tint = kvf::black_v;
 	menu.text.transform.position = glm::vec2{0, -240};
 
-	menu.start.create({800, 200}, 2);
+	menu.start.create({800, 200}, 4);
 	menu.start.set_string(*m_font, "PLAY", 120);
 	menu.start.text.tint = kvf::black_v;
 	menu.start.set_position({0, -400});
