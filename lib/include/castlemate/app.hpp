@@ -1,4 +1,5 @@
 #pragma once
+#include "bnet/context.hpp"
 #include "castlemate/state.hpp"
 #include <le2d/context.hpp>
 #include <le2d/file_data_loader.hpp>
@@ -31,5 +32,7 @@ class App {
 	StateManager m_state_manager{};
 
 	mutable bool m_should_close{};
+
+	bnet::Context m_bnet_context{};
 };
 } // namespace CastleMate

@@ -5,6 +5,7 @@ add_library(${package_name}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     le2d
+    bnet
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

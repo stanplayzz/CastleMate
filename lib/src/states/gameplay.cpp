@@ -1,14 +1,17 @@
 #include "castlemate/states/gameplay.hpp"
 #include "castlemate/app.hpp"
 #include "castlemate/states/menu.hpp"
+#include "castlemate/utils/algebraic.hpp"
 #include "castlemate/utils/conversion.hpp"
 
 namespace CastleMate {
-Gameplay::Gameplay(gsl::not_null<App*> app, bool white) : m_app(app), m_white_bottom(white) {
+Gameplay::Gameplay(gsl::not_null<App*> app, bool white, std::unique_ptr<MoveSource> move_source)
+	: m_app(app), m_move_source(std::move(move_source)), m_white_bottom(white) {
 	m_side_menu = std::make_unique<SideMenu>(app);
 	m_board = std::make_unique<Board>(app);
-	m_board->set_on_move([this](std::string const& notation, bool white) {
-		m_side_menu->append_move(notation, white);
+	m_board->set_on_move([this](Move move, Position& pos, bool white) {
+		m_side_menu->append_move(to_algebraic(move, pos), white);
+		m_move_source->send_move(move);
 	});
 	m_board->set_on_capture([this](Piece p) {
 		m_side_menu->add_capture(p);
@@ -19,6 +22,8 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white) : m_app(app), m_white_bo
 
 auto Gameplay::update() -> std::unique_ptr<State> {
 	handle_input();
+
+	if (auto move = m_move_source->poll_remote_move()) { m_board->move(*move); }
 
 	if (m_board->should_update_view()) {
 		m_board_view->update_board(static_cast<std::uint64_t const*>(m_board->get_bitboard()), m_white_bottom);

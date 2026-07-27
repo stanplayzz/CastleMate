@@ -18,7 +18,7 @@ Menu::Menu(gsl::not_null<App*> app) : m_app(app) {
 	m_play_button.set_texture(*m_play_texture);
 	m_quit_button.set_position({0, -40});
 	m_play_button.on_click = [this]() {
-		m_choose_color = true;
+		m_choose_mode = true;
 	};
 	m_quit_button.create_sprite({800, 400}, false);
 	m_quit_button.set_texture(*m_quit_texture);
@@ -34,6 +34,7 @@ Menu::Menu(gsl::not_null<App*> app) : m_app(app) {
 	m_logo.transform.position.y += 700;
 
 	create_choose_color_menu();
+	create_game_mode_menu();
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
@@ -44,6 +45,12 @@ auto Menu::update() -> std::unique_ptr<State> {
 		m_choose_color_menu.start.update(world_mouse_pos);
 		if (auto const* mouse = std::get_if<le::event::MouseButton>(&e)) {
 			if (mouse->button == GLFW_MOUSE_BUTTON_1 && mouse->action == GLFW_RELEASE) {
+				if (m_choose_mode) {
+					m_game_mode_menu.local.click(world_mouse_pos);
+					m_game_mode_menu.online.click(world_mouse_pos);
+					m_game_mode_menu.back.click(world_mouse_pos);
+					return {};
+				}
 				if (m_choose_color) {
 					if (m_choose_color_menu.white.hovered(world_mouse_pos) ||
 						m_choose_color_menu.black.hovered(world_mouse_pos)) {
@@ -69,13 +76,22 @@ auto Menu::update() -> std::unique_ptr<State> {
 		}
 	}
 
-	if (m_to_game) { return std::make_unique<Gameplay>(m_app, m_choose_color_menu.white_selected); }
+	if (m_to_local_game) {
+		return std::make_unique<Gameplay>(m_app, m_choose_color_menu.white_selected,
+										  std::make_unique<LocalMoveSource>());
+	}
 
 	return nullptr;
 }
 
 void Menu::draw(le::IRenderer& renderer) const {
 	m_logo.draw(renderer);
+
+	if (m_choose_mode) {
+		m_game_mode_menu.draw(renderer);
+		return;
+	}
+
 	if (m_choose_color) {
 		m_choose_color_menu.draw(renderer);
 		return;
@@ -116,7 +132,41 @@ void Menu::create_choose_color_menu() {
 	menu.start.text.tint = kvf::black_v;
 	menu.start.set_position({0, -400});
 	menu.start.on_click = [this]() {
-		m_to_game = true;
+		m_to_local_game = true;
+	};
+}
+
+void Menu::create_game_mode_menu() {
+	auto& menu = m_game_mode_menu;
+
+	menu.background.create({1200, 1200}, 8);
+
+	menu.local.create({800, 200}, 4);
+	menu.local.set_string(*m_font, "LOCAL", 120);
+	menu.local.text.tint = kvf::black_v;
+	menu.local.set_position({0, 200});
+
+	menu.online.create({800, 200}, 4);
+	menu.online.set_string(*m_font, "ONLINE", 120);
+	menu.online.text.tint = kvf::black_v;
+	menu.online.set_position({0, -50});
+
+	menu.back.create({500, 150}, 4);
+	menu.back.set_string(*m_font, "BACK", 90);
+	menu.back.text.tint = kvf::black_v;
+	menu.back.set_position({0, -400});
+
+	menu.local.on_click = [this]() {
+		m_choose_mode = false;
+		m_choose_color = true;
+	};
+
+	menu.online.on_click = [this]() {
+		m_choose_mode = false;
+	};
+
+	menu.back.on_click = [this]() {
+		m_choose_mode = false;
 	};
 }
 } // namespace CastleMate
