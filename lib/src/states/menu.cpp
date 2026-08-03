@@ -35,10 +35,12 @@ Menu::Menu(gsl::not_null<App*> app) : m_app(app) {
 
 	create_choose_color_menu();
 	create_game_mode_menu();
+	create_join_lan_menu();
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 auto Menu::update() -> std::unique_ptr<State> {
+	// INPUT
 	for (auto const& e : m_app->get_context().event_queue()) {
 		if (auto const* mouse = std::get_if<le::event::CursorPos>(&e)) { m_mouse_pos = mouse->window; }
 		auto world_mouse_pos = window_to_world(m_mouse_pos, m_app->get_context().window_size());
@@ -47,8 +49,14 @@ auto Menu::update() -> std::unique_ptr<State> {
 			if (mouse->button == GLFW_MOUSE_BUTTON_1 && mouse->action == GLFW_RELEASE) {
 				if (m_choose_mode) {
 					m_game_mode_menu.local.click(world_mouse_pos);
-					m_game_mode_menu.online.click(world_mouse_pos);
+					m_game_mode_menu.host_lan.click(world_mouse_pos);
+					m_game_mode_menu.join_lan.click(world_mouse_pos);
 					m_game_mode_menu.back.click(world_mouse_pos);
+					return {};
+				}
+				if (m_choose_join_lan) {
+					for (auto& button : m_join_lan_menu.host_buttons) { button.click(world_mouse_pos); }
+					m_join_lan_menu.back.click(world_mouse_pos);
 					return {};
 				}
 				if (m_choose_color) {
@@ -81,6 +89,16 @@ auto Menu::update() -> std::unique_ptr<State> {
 										  std::make_unique<LocalMoveSource>());
 	}
 
+	// LAN hosting
+	auto white = m_lan_session.is_host();
+	if (auto conn = m_lan_session.poll(); conn) {
+		auto network_game = std::make_unique<NetworkGame>(std::move(*conn));
+		auto move_source = std::make_unique<OnlineMoveSource>(std::move(network_game), white);
+		return std::make_unique<Gameplay>(m_app, white, std::move(move_source));
+	}
+
+	if (m_choose_join_lan) { sync_join_lan_menu(); }
+
 	return nullptr;
 }
 
@@ -89,6 +107,11 @@ void Menu::draw(le::IRenderer& renderer) const {
 
 	if (m_choose_mode) {
 		m_game_mode_menu.draw(renderer);
+		return;
+	}
+
+	if (m_choose_join_lan) {
+		m_join_lan_menu.draw(renderer);
 		return;
 	}
 
@@ -141,18 +164,23 @@ void Menu::create_game_mode_menu() {
 
 	menu.background.create({1200, 1200}, 8);
 
-	menu.local.create({800, 200}, 4);
-	menu.local.set_string(*m_font, "LOCAL", 120);
+	menu.local.create({800, 150}, 4);
+	menu.local.set_string(*m_font, "LOCAL GAME", 90);
 	menu.local.text.tint = kvf::black_v;
-	menu.local.set_position({0, 200});
+	menu.local.set_position({0, 300});
 
-	menu.online.create({800, 200}, 4);
-	menu.online.set_string(*m_font, "ONLINE", 120);
-	menu.online.text.tint = kvf::black_v;
-	menu.online.set_position({0, -50});
+	menu.host_lan.create({800, 150}, 4);
+	menu.host_lan.set_string(*m_font, "HOST LAN", 90);
+	menu.host_lan.text.tint = kvf::black_v;
+	menu.host_lan.set_position({0, 100});
 
-	menu.back.create({500, 150}, 4);
-	menu.back.set_string(*m_font, "BACK", 90);
+	menu.join_lan.create({800, 150}, 4);
+	menu.join_lan.set_string(*m_font, "JOIN LAN", 90);
+	menu.join_lan.text.tint = kvf::black_v;
+	menu.join_lan.set_position({0, -100});
+
+	menu.back.create({500, 120}, 4);
+	menu.back.set_string(*m_font, "BACK", 80);
 	menu.back.text.tint = kvf::black_v;
 	menu.back.set_position({0, -400});
 
@@ -161,12 +189,60 @@ void Menu::create_game_mode_menu() {
 		m_choose_color = true;
 	};
 
-	menu.online.on_click = [this]() {
+	menu.host_lan.on_click = [this]() {
+		m_lan_session.start_hosting();
+	};
+
+	menu.join_lan.on_click = [this]() {
 		m_choose_mode = false;
+		m_choose_join_lan = true;
+		m_lan_session.start_joining();
 	};
 
 	menu.back.on_click = [this]() {
 		m_choose_mode = false;
 	};
 }
+
+void Menu::create_join_lan_menu() {
+	auto& menu = m_join_lan_menu;
+	menu.background.create({1200, 1200}, 8);
+
+	menu.back.create({500, 120}, 4);
+	menu.back.set_string(*m_font, "BACK", 80);
+	menu.back.text.tint = kvf::black_v;
+	menu.back.set_position({0, -400});
+	menu.back.on_click = [this]() {
+		m_choose_join_lan = false;
+		m_choose_mode = true;
+		m_lan_session.reset();
+	};
+}
+
+void Menu::sync_join_lan_menu() {
+	auto const hosts = m_lan_session.discovered_hosts();
+	auto& menu = m_join_lan_menu;
+
+	if (menu.host_buttons.size() == hosts.size()) { return; }
+
+	menu.host_buttons.clear();
+	menu.host_buttons.reserve(hosts.size());
+
+	constexpr auto start_y = 300.f;
+	constexpr auto spacing = 150.f;
+
+	for (std::size_t i = 0; i < hosts.size(); ++i) {
+		auto const& host = hosts[i];
+		auto button = ui::TextButton{};
+		button.create({800, 120}, 4);
+		button.set_string(*m_font, host.host, 70);
+		button.text.tint = kvf::black_v;
+		button.set_position({0, start_y - (static_cast<float>(i) * spacing)});
+		button.on_click = [this, host]() {
+			m_lan_session.connect_to(host);
+		};
+		menu.host_buttons.push_back(std::move(button));
+	}
+}
+
 } // namespace CastleMate

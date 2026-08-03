@@ -1,20 +1,17 @@
 #pragma once
 #include "castlemate/ui/button.hpp"
 #include "castlemate/ui/widget.hpp"
+#include <vector>
 
 namespace CastleMate::ui {
-struct GameModeMenu {
+struct JoinLanMenu {
 	Widget background{};
-	TextButton local{};
-	TextButton host_lan{};
-	TextButton join_lan{};
+	std::vector<TextButton> host_buttons{};
 	TextButton back{};
 
 	void draw(le::IRenderer& renderer) const {
 		background.draw(renderer);
-		local.draw(renderer);
-		host_lan.draw(renderer);
-		join_lan.draw(renderer);
+		for (auto const& button : host_buttons) { button.draw(renderer); }
 		back.draw(renderer);
 	}
 };

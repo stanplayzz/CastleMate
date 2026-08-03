@@ -11,7 +11,7 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white, std::unique_ptr<MoveSour
 	m_board = std::make_unique<Board>(app);
 	m_board->set_on_move([this](Move move, Position& pos, bool white) {
 		m_side_menu->append_move(to_algebraic(move, pos), white);
-		m_move_source->send_move(move);
+		if (white == m_white_bottom) { m_move_source->send_move(move); }
 	});
 	m_board->set_on_capture([this](Piece p) {
 		m_side_menu->add_capture(p);
@@ -62,7 +62,7 @@ void Gameplay::handle_input() {
 							m_board->set_promotion(pieces.at(i));
 						}
 					}
-				} else {
+				} else if (m_move_source->is_turn()) {
 					auto pos = screen_to_sq(window_to_board(m_mouse_pos, m_app->get_context().window_size()));
 					auto sq = static_cast<int>(pos.x + (pos.y * 8));
 					sq = m_white_bottom ? sq : 63 - sq;
