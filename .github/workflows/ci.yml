@@ -1,12 +1,6 @@
 name: ci-pr
 on: [pull_request, workflow_dispatch]
 jobs:
-  init_ubuntu:
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: init
-        run: sudo apt install -yqq mesa-common-dev libwayland-dev libxkbcommon-dev wayland-protocols extra-cmake-modules xorg-dev
   build-and-test:
     continue-on-error: true
     strategy:
@@ -34,6 +28,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+      - name: init linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yqq \
+            mesa-common-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            wayland-protocols \
+            extra-cmake-modules \
+            xorg-dev
       - name: configure
         run: cmake -S . --preset=${{ matrix.preset }} -B build
       - name: build debug
