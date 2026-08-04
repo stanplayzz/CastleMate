@@ -11,7 +11,8 @@ layout(push_constant) uniform BoardBlock {
 
 void main() {
     float cells = 8.0;
-    vec2 board = in_uv * cells;
+    vec2 uv = clamp(in_uv, 0.0, 1.0);
+    vec2 board = uv * cells;
 
     ivec2 cell = ivec2(floor(board));
     bool checker = ((cell.x + cell.y) % 2) == 0;

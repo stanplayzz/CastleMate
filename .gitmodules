@@ -1,3 +1,6 @@
 [submodule "ext/le2d"]
 	path = ext/le2d
 	url = https://github.com/stanplayzz/le2d.git
+[submodule "ext/bnet"]
+	path = ext/bnet
+	url = https://github.com/stanplayzz/bnet

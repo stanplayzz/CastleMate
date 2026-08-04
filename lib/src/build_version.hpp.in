@@ -1,5 +1,5 @@
 #pragma once
-#include <klib/version_str.hpp>
+#include <klib/version.hpp>
 
 namespace CastleMate {
 inline constexpr auto build_version_v = klib::Version {

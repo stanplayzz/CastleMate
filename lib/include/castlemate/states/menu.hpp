@@ -1,7 +1,11 @@
 #pragma once
+#include "castlemate/network/lan_session.hpp"
 #include "castlemate/state.hpp"
 #include "castlemate/ui/button.hpp"
 #include "castlemate/ui/choose_color_menu.hpp"
+#include "castlemate/ui/game_mode_menu.hpp"
+#include "castlemate/ui/join_lan_menu.hpp"
+#include <bnet/listener.hpp>
 #include <le2d/drawable/shape.hpp>
 #include <le2d/drawable/sprite.hpp>
 #include <le2d/drawable/text.hpp>
@@ -24,6 +28,9 @@ class Menu : public State {
 
   private:
 	void create_choose_color_menu();
+	void create_game_mode_menu();
+	void create_join_lan_menu();
+	void sync_join_lan_menu();
 
 	gsl::not_null<App*> m_app;
 
@@ -36,12 +43,19 @@ class Menu : public State {
 	ui::SpriteButton m_play_button{};
 	ui::SpriteButton m_quit_button{};
 
-	ui::ChooseColorMenu m_choose_color_menu{};
-	bool m_choose_color{};
 	std::unique_ptr<le::ITexture> m_piece_texture{};
 	std::unique_ptr<le::ITexture> m_logo_texture{};
 	le::drawable::Sprite m_logo{};
 
-	bool m_to_game{};
+	ui::ChooseColorMenu m_choose_color_menu{};
+	bool m_choose_color{};
+	ui::GameModeMenu m_game_mode_menu{};
+	bool m_choose_mode{};
+	ui::JoinLanMenu m_join_lan_menu{};
+	bool m_choose_join_lan{};
+
+	bool m_to_local_game{};
+
+	LanSession m_lan_session{};
 };
 } // namespace CastleMate

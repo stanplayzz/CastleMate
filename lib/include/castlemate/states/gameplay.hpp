@@ -1,5 +1,6 @@
 #pragma once
 #include "castlemate/core/board.hpp"
+#include "castlemate/core/move_source.hpp"
 #include "castlemate/state.hpp"
 #include "castlemate/ui/board_view.hpp"
 #include "castlemate/ui/side_menu.hpp"
@@ -9,7 +10,7 @@ class App;
 
 class Gameplay : public State {
   public:
-	Gameplay(gsl::not_null<App*> app, bool white);
+	Gameplay(gsl::not_null<App*> app, bool white, std::unique_ptr<MoveSource> move_source);
 
 	auto update() -> std::unique_ptr<State> override;
 	void draw(le::IRenderer& renderer) const override;
@@ -20,6 +21,7 @@ class Gameplay : public State {
 
 	gsl::not_null<App*> m_app;
 
+	std::unique_ptr<MoveSource> m_move_source{};
 	std::unique_ptr<Board> m_board{};
 	std::unique_ptr<BoardView> m_board_view{};
 	std::unique_ptr<SideMenu> m_side_menu{};

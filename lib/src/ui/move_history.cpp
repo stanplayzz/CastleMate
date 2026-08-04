@@ -12,7 +12,6 @@ constexpr auto move_col_width_v = 220;
 MoveHistory::MoveHistory(gsl::not_null<le::IFont*> font, kvf::Rect<> const& bounds) : m_font(font), m_bounds(bounds) {}
 
 void MoveHistory::append_move(std::string const& notation, bool white) {
-	std::println("TEST TWO");
 	if (white) {
 		add_row(notation);
 	} else if (!m_rows.empty()) {
@@ -30,10 +29,6 @@ void MoveHistory::draw(le::IRenderer& renderer) const {
 }
 
 void MoveHistory::add_row(std::string const& notation) {
-	std::println("TEST THREE");
-	std::println("{}", notation);
-	std::println("{}", m_rows.size());
-
 	if (m_rows.size() == max_moves_v) {
 		m_rows.pop_front();
 		for (auto& row : m_rows) {
@@ -46,8 +41,6 @@ void MoveHistory::add_row(std::string const& notation) {
 
 	auto row = Row{};
 	auto const y = m_bounds.top_left().y - (static_cast<float>(m_rows.size()) * row_height_v) - (row_height_v * 0.5f);
-
-	std::println("{}", y);
 
 	row.background.create({m_bounds.size().x, row_height_v});
 	row.background.transform.position = {m_bounds.top_left().x + (m_bounds.size().x * 0.5f), y};
@@ -66,7 +59,5 @@ void MoveHistory::add_row(std::string const& notation) {
 
 	++m_move_count;
 	m_rows.push_back(std::move(row));
-
-	std::println("{}, {}", row.background.transform.position.x, row.background.transform.position.y);
 }
 } // namespace CastleMate::ui

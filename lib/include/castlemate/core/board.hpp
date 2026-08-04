@@ -14,7 +14,7 @@ class Board {
 
 	void set_promotion(Piece p);
 
-	void set_on_move(std::function<void(std::string const&, bool)> cb) { m_on_move = std::move(cb); }
+	void set_on_move(std::function<void(Move, Position&, bool)> cb) { m_on_move = std::move(cb); }
 	void set_on_capture(std::function<void(Piece)> cb) { m_on_capture = std::move(cb); }
 
 	[[nodiscard]] auto get_selected_square() const -> std::optional<int> { return m_selected_sq; }
@@ -39,11 +39,12 @@ class Board {
 		return m_has_ended ? std::optional<GameEnding>(m_ending) : std::nullopt;
 	}
 
+	void move(Move m);
+
   private:
 	void load_board();
 	void update_occ();
 
-	void move(Move m);
 	void finish_move(Move m);
 
 	gsl::not_null<App*> m_app;
@@ -64,7 +65,7 @@ class Board {
 	std::unique_ptr<le::IAudioBuffer> m_move_buffer{};
 	std::unique_ptr<le::IAudioBuffer> m_capture_buffer{};
 
-	std::function<void(std::string const&, bool)> m_on_move{};
+	std::function<void(Move, Position&, bool)> m_on_move{};
 	std::function<void(Piece)> m_on_capture;
 };
 } // namespace CastleMate
