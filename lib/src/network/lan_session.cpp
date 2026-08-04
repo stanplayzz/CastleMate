@@ -1,5 +1,6 @@
 #include "castlemate/network/lan_session.hpp"
 #include <algorithm>
+#include <array>
 #include <print>
 
 using namespace std::chrono_literals;
@@ -83,7 +84,9 @@ auto LanSession::poll_host() -> std::optional<bnet::Connection> {
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 		auto const message = std::string_view{reinterpret_cast<char const*>(buffer.data()), *n};
 		if (message == ping_message_v) {
-			m_discovery_socket->send_to(std::as_bytes(std::span{ack_message_v}), sender); // NOLINT
+			if (auto result = m_discovery_socket->send_to(std::as_bytes(std::span{ack_message_v}), sender); !result) {
+				throw std::runtime_error{std::string{bnet::to_string_view(result.error())}};
+			}
 		}
 	}
 
