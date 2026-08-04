@@ -34,7 +34,7 @@ void LanSession::start_hosting() {
 	auto listener = bnet::Listener::create(game_port_v, 4);
 	if (!listener) { throw std::runtime_error{std::string{bnet::to_string_view(listener.error())}}; }
 	m_listener = std::move(*listener);
-	if (auto result = m_listener->set_timeout(1ms); !result) {
+	if (auto result = m_listener->set_blocking(false); !result) {
 		throw std::runtime_error{std::string{bnet::to_string_view(result.error())}};
 	}
 }

@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace CastleMate {
-constexpr auto rook_mask(int sq) -> std::uint64_t {
+inline auto rook_mask(int sq) -> std::uint64_t {
 	auto mask = std::uint64_t{};
 	auto rank = sq / 8;
 	auto file = sq % 8;
@@ -22,7 +22,7 @@ constexpr auto rook_mask(int sq) -> std::uint64_t {
 	return mask;
 }
 
-constexpr auto bishop_mask(int sq) -> std::uint64_t {
+inline auto bishop_mask(int sq) -> std::uint64_t {
 	auto mask = std::uint64_t{};
 	auto rank = sq / 8;
 	auto file = sq % 8;
@@ -35,7 +35,7 @@ constexpr auto bishop_mask(int sq) -> std::uint64_t {
 	return mask;
 }
 
-constexpr auto blocker_subset(std::size_t index, std::uint64_t mask) -> std::uint64_t {
+inline auto blocker_subset(std::size_t index, std::uint64_t mask) -> std::uint64_t {
 	auto subset = std::uint64_t{};
 	auto temp = mask;
 	for (auto i = 0; i < 64; i++) {
@@ -47,7 +47,7 @@ constexpr auto blocker_subset(std::size_t index, std::uint64_t mask) -> std::uin
 }
 
 // inefficient ray attacks used for initializing lookup table
-constexpr auto rook_attack_ray(int sq, std::uint64_t blockers) -> std::uint64_t {
+inline auto rook_attack_ray(int sq, std::uint64_t blockers) -> std::uint64_t {
 	auto attacks = std::uint64_t{};
 	auto rank = sq / 8;
 	auto file = sq % 8;
@@ -75,7 +75,7 @@ constexpr auto rook_attack_ray(int sq, std::uint64_t blockers) -> std::uint64_t 
 	return attacks;
 }
 
-constexpr auto bishop_attack_ray(int sq, std::uint64_t blockers) -> std::uint64_t {
+inline auto bishop_attack_ray(int sq, std::uint64_t blockers) -> std::uint64_t {
 	auto attacks = std::uint64_t{};
 	auto rank = sq / 8;
 	auto file = sq % 8;
@@ -104,7 +104,7 @@ constexpr auto bishop_attack_ray(int sq, std::uint64_t blockers) -> std::uint64_
 }
 
 // magic
-constexpr auto find_magic(int sq, std::uint64_t mask, bool diagonal) -> std::uint64_t {
+inline auto find_magic(int sq, std::uint64_t mask, bool diagonal) -> std::uint64_t {
 	auto bits = std::popcount(mask);
 	auto num_subsets = static_cast<std::size_t>(1 << bits);
 
@@ -140,7 +140,7 @@ struct Magic {
 	int shift{};
 	std::vector<std::uint64_t> table{};
 };
-constexpr auto init_magics(bool diagonal) -> std::array<Magic, 64> {
+inline auto init_magics(bool diagonal) -> std::array<Magic, 64> {
 	auto magics = std::array<Magic, 64>{};
 
 	auto init_square = [&](int sq) {
