@@ -1,6 +1,12 @@
 name: ci-pr
 on: [pull_request, workflow_dispatch]
 jobs:
+  init_ubuntu:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: init
+        run: .github/init_ubuntu.sh --skip-install
   build-and-test:
     continue-on-error: true
     strategy:
