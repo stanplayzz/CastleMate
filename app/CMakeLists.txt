@@ -9,8 +9,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/include"
 )
 
-target_precompile_headers(${PROJECT_NAME} REUSE_FROM le2d)
-
 target_sources(${PROJECT_NAME} PRIVATE
   src/main.cpp
 )
