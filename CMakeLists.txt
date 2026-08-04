@@ -11,11 +11,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_DEBUG_POSTFIX "-d")
 set(CMAKE_BUILD_RPATH "$ORIGIN")
 
-# find_package(Git QUIET)
-# if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-#     execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-#                     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-# endif()
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()
 
 add_subdirectory(ext)
 add_subdirectory(lib)
