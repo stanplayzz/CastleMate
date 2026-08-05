@@ -145,6 +145,17 @@
                 "value": "x64",
                 "strategy": "external"
             }
+        },
+        {
+            "name": "server-ubuntu",
+            "displayName": "Server (Ubuntu x64)",
+            "inherits": "base-gcc",
+            "binaryDir": "${sourceDir}/out/server-ubuntu",
+            "cacheVariables": {
+                "CASTLEMATE_BUILD_SERVER": "ON",
+                "CMAKE_C_COMPILER": "aarch64-linux-gnu-gcc",
+                "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++"
+            }
         }
     ],
     "buildPresets": [
@@ -197,6 +208,11 @@
             "name": "UBSan Debug",
             "configurePreset": "ninja-ubsan",
             "configuration": "Debug"
+        },
+        {
+            "name": "Server Ubuntu Release",
+            "configurePreset": "server-ubuntu",
+            "configuration": "Release"
         }
     ],
     "testPresets": [

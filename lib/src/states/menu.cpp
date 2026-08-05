@@ -51,6 +51,7 @@ auto Menu::update() -> std::unique_ptr<State> {
 					m_game_mode_menu.local.click(world_mouse_pos);
 					m_game_mode_menu.host_lan.click(world_mouse_pos);
 					m_game_mode_menu.join_lan.click(world_mouse_pos);
+					m_game_mode_menu.online.click(world_mouse_pos);
 					m_game_mode_menu.back.click(world_mouse_pos);
 					return {};
 				}
@@ -167,22 +168,27 @@ void Menu::create_game_mode_menu() {
 	menu.local.create({800, 150}, 4);
 	menu.local.set_string(*m_font, "LOCAL GAME", 90);
 	menu.local.text.tint = kvf::black_v;
-	menu.local.set_position({0, 300});
+	menu.local.set_position({0, 400});
 
 	menu.host_lan.create({800, 150}, 4);
 	menu.host_lan.set_string(*m_font, "HOST LAN", 90);
 	menu.host_lan.text.tint = kvf::black_v;
-	menu.host_lan.set_position({0, 100});
+	menu.host_lan.set_position({0, 200});
 
 	menu.join_lan.create({800, 150}, 4);
 	menu.join_lan.set_string(*m_font, "JOIN LAN", 90);
 	menu.join_lan.text.tint = kvf::black_v;
-	menu.join_lan.set_position({0, -100});
+	menu.join_lan.set_position({0, 0});
+
+	menu.online.create({800, 150}, 4);
+	menu.online.set_string(*m_font, "ONLINE", 90);
+	menu.online.text.tint = kvf::black_v;
+	menu.online.set_position({0, -200});
 
 	menu.back.create({500, 120}, 4);
 	menu.back.set_string(*m_font, "BACK", 80);
 	menu.back.text.tint = kvf::black_v;
-	menu.back.set_position({0, -400});
+	menu.back.set_position({0, -500});
 
 	menu.local.on_click = [this]() {
 		m_choose_mode = false;
@@ -197,6 +203,10 @@ void Menu::create_game_mode_menu() {
 		m_choose_mode = false;
 		m_choose_join_lan = true;
 		m_lan_session.start_joining();
+	};
+
+	menu.online.on_click = []() {
+		auto connection = bnet::Connection::connect({.host = "castlemate.duckdns.org", .port = 5000});
 	};
 
 	menu.back.on_click = [this]() {
