@@ -2,7 +2,7 @@
 #include <print>
 
 namespace {
-constexpr auto server_port_v = 5002;
+constexpr auto server_port_v = 5000;
 }
 
 auto main() -> int {

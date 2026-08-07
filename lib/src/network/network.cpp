@@ -30,7 +30,7 @@ void Network::join_lan(bnet::Address const& host) {
 
 void Network::search_match() {
 	reset();
-	auto connection = bnet::Connection::connect({.host = server_host, .port = server_port_v});
+	auto connection = bnet::Connection::connect({.host = server_host, .port = game_port_v});
 }
 
 void Network::update() {

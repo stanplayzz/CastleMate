@@ -9,6 +9,5 @@ constexpr auto tile_size_v = board_size_v / 8.f;
 // network
 constexpr auto game_port_v = 5000;
 constexpr auto lan_port_v = 5001;
-constexpr auto server_port_v = 5002;
 constexpr auto server_host = "castlemate.duckdns.org";
 } // namespace CastleMate
