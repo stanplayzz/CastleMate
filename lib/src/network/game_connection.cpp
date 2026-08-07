@@ -1,5 +1,6 @@
-#include "castlemate/network/network_game.hpp"
-#include <print>
+#include <utility>
+
+#include "castlemate/network/game_connection.hpp"
 
 using namespace std::chrono_literals;
 
@@ -8,28 +9,21 @@ namespace {
 constexpr auto poll_interval_v = std::chrono::milliseconds{100};
 }
 
-NetworkGame::NetworkGame(bnet::Connection connection) : m_connection(std::move(connection)) {
+GameConnection::GameConnection(bnet::Connection connection) : m_connection(std::move(connection)) {
 	auto res = m_connection.set_timeout(poll_interval_v); // NOLINT
-	if (!res) {
-		std::println("TEST {}", bnet::to_string_view(res.error()));
-		return;
-	}
-	m_recv_thread = std::thread{[this] {
-		receive_loop();
+	if (!res) { return; }
+
+	m_recv_thread = std::jthread{[this](std::stop_token const& token) {
+		receive_loop(token);
 	}};
 }
 
-NetworkGame::~NetworkGame() {
-	m_running = false;
-	if (m_recv_thread.joinable()) { m_recv_thread.join(); }
-}
-
-void NetworkGame::send_move(Move move) {
+void GameConnection::send_move(Move move) {
 	auto bytes = std::as_bytes(std::span{&move, 1});
 	if (auto result = m_connection.send_framed(bytes); !result) { m_state = ConnectionState::Disconnected; }
 }
 
-auto NetworkGame::poll_move() -> std::optional<Move> {
+auto GameConnection::poll_move() -> std::optional<Move> {
 	std::lock_guard lock{m_queue_mutex};
 	if (m_incoming.empty()) { return std::nullopt; }
 
@@ -38,11 +32,11 @@ auto NetworkGame::poll_move() -> std::optional<Move> {
 	return move;
 }
 
-void NetworkGame::receive_loop() {
+void GameConnection::receive_loop(std::stop_token const& token) {
 	auto last_activity = std::chrono::steady_clock::now();
 
 	auto buffer = std::array<std::byte, sizeof(Move)>{};
-	while (m_running) {
+	while (!token.stop_requested()) {
 		auto result = m_connection.receive_framed(buffer);
 		if (!result) {
 			if (result.error() == bnet::Error::TimedOut) {

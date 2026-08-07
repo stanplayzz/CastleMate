@@ -35,6 +35,7 @@ Menu::Menu(gsl::not_null<App*> app) : m_app(app) {
 
 	create_choose_color_menu();
 	create_game_mode_menu();
+	create_searching_online_menu();
 	create_join_lan_menu();
 }
 
@@ -58,6 +59,10 @@ auto Menu::update() -> std::unique_ptr<State> {
 				if (m_choose_join_lan) {
 					for (auto& button : m_join_lan_menu.host_buttons) { button.click(world_mouse_pos); }
 					m_join_lan_menu.back.click(world_mouse_pos);
+					return {};
+				}
+				if (m_searching_online) {
+					m_searching_online_menu.cancel.click(world_mouse_pos);
 					return {};
 				}
 				if (m_choose_color) {
@@ -85,17 +90,10 @@ auto Menu::update() -> std::unique_ptr<State> {
 		}
 	}
 
-	if (m_to_local_game) {
-		return std::make_unique<Gameplay>(m_app, m_choose_color_menu.white_selected,
-										  std::make_unique<LocalMoveSource>());
-	}
+	if (m_to_local_game) { return std::make_unique<Gameplay>(m_app, m_choose_color_menu.white_selected, nullptr); }
 
-	// LAN hosting
-	auto white = m_lan_session.is_host();
-	if (auto conn = m_lan_session.poll(); conn) {
-		auto network_game = std::make_unique<NetworkGame>(std::move(*conn));
-		auto move_source = std::make_unique<OnlineMoveSource>(std::move(network_game), white);
-		return std::make_unique<Gameplay>(m_app, white, std::move(move_source));
+	if (auto* conn = m_app->network().get_connection(); conn) {
+		return std::make_unique<Gameplay>(m_app, true, std::make_unique<GameConnection>(std::move(*conn)));
 	}
 
 	if (m_choose_join_lan) { sync_join_lan_menu(); }
@@ -113,6 +111,11 @@ void Menu::draw(le::IRenderer& renderer) const {
 
 	if (m_choose_join_lan) {
 		m_join_lan_menu.draw(renderer);
+		return;
+	}
+
+	if (m_searching_online) {
+		m_searching_online_menu.draw(renderer);
 		return;
 	}
 
@@ -196,17 +199,18 @@ void Menu::create_game_mode_menu() {
 	};
 
 	menu.host_lan.on_click = [this]() {
-		m_lan_session.start_hosting();
+		m_app->network().host_lan();
 	};
 
 	menu.join_lan.on_click = [this]() {
 		m_choose_mode = false;
 		m_choose_join_lan = true;
-		m_lan_session.start_joining();
+		m_app->network().browse_lan();
 	};
 
-	menu.online.on_click = []() {
-		auto connection = bnet::Connection::connect({.host = "castlemate.duckdns.org", .port = 5000});
+	menu.online.on_click = [this]() {
+		m_choose_mode = false;
+		m_searching_online = true;
 	};
 
 	menu.back.on_click = [this]() {
@@ -225,12 +229,31 @@ void Menu::create_join_lan_menu() {
 	menu.back.on_click = [this]() {
 		m_choose_join_lan = false;
 		m_choose_mode = true;
-		m_lan_session.reset();
+		m_app->network().stop_browse_lan();
+	};
+}
+
+void Menu::create_searching_online_menu() {
+	auto& menu = m_searching_online_menu;
+
+	menu.background.create({1200, 1200}, 8);
+
+	menu.text.set_string(*m_font, "SEARCHING FOR OPPONENT...", {.height = le::TextHeight{100}});
+	menu.text.tint = kvf::black_v;
+	menu.text.transform.position = {0, 100};
+
+	menu.cancel.create({500, 120}, 4);
+	menu.cancel.set_string(*m_font, "CANCEL", 80);
+	menu.cancel.text.tint = kvf::black_v;
+	menu.cancel.set_position({0, -300});
+
+	menu.cancel.on_click = [this]() {
+		m_searching_online = false;
 	};
 }
 
 void Menu::sync_join_lan_menu() {
-	auto const hosts = m_lan_session.discovered_hosts();
+	auto const hosts = m_app->network().lan_hosts();
 	auto& menu = m_join_lan_menu;
 
 	if (menu.host_buttons.size() == hosts.size()) { return; }
@@ -249,7 +272,7 @@ void Menu::sync_join_lan_menu() {
 		button.text.tint = kvf::black_v;
 		button.set_position({0, start_y - (static_cast<float>(i) * spacing)});
 		button.on_click = [this, host]() {
-			m_lan_session.connect_to(host);
+			m_app->network().join_lan(host);
 		};
 		menu.host_buttons.push_back(std::move(button));
 	}

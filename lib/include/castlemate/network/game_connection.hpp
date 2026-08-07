@@ -11,10 +11,9 @@ enum class ConnectionState : std::uint8_t {
 	TimedOut,
 };
 
-class NetworkGame { // NOLINT
+class GameConnection { // NOLINT
   public:
-	explicit NetworkGame(bnet::Connection connection);
-	~NetworkGame();
+	explicit GameConnection(bnet::Connection connection);
 
 	void send_move(Move move);
 
@@ -23,11 +22,10 @@ class NetworkGame { // NOLINT
 	[[nodiscard]] auto state() { return m_state.load(); }
 
   private:
-	void receive_loop();
+	void receive_loop(std::stop_token const& token);
 
 	bnet::Connection m_connection;
-	std::thread m_recv_thread{};
-	std::atomic<bool> m_running{true};
+	std::jthread m_recv_thread{};
 	std::atomic<ConnectionState> m_state{ConnectionState::Connected};
 
 	std::mutex m_queue_mutex{};

@@ -1,5 +1,5 @@
 #pragma once
-#include "bnet/context.hpp"
+#include "castlemate/network/network.hpp"
 #include "castlemate/state.hpp"
 #include <le2d/context.hpp>
 #include <le2d/file_data_loader.hpp>
@@ -21,6 +21,8 @@ class App {
 
 	[[nodiscard]] auto get_state_manager() -> StateManager& { return m_state_manager; }
 
+	[[nodiscard]] auto network() -> Network& { return m_network; }
+
 	void close() const { m_should_close = true; }
 
   private:
@@ -33,6 +35,6 @@ class App {
 
 	mutable bool m_should_close{};
 
-	bnet::Context m_bnet_context{};
+	Network m_network{};
 };
 } // namespace CastleMate

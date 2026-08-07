@@ -27,6 +27,8 @@ void App::run() {
 	while (m_context->is_running()) {
 		m_context->next_frame();
 
+		m_network.update();
+
 		m_state_manager.update();
 
 		auto& renderer = m_context->begin_render(m_state_manager.get_clear_color());

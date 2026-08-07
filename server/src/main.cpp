@@ -2,11 +2,11 @@
 #include <print>
 
 namespace {
-constexpr auto port_v = 5000;
+constexpr auto server_port_v = 5002;
 }
 
 auto main() -> int {
-	auto listener = bnet::Listener::create(port_v);
+	auto listener = bnet::Listener::create(server_port_v);
 	if (!listener) { throw std::runtime_error{std::string{bnet::to_string_view(listener.error())}}; }
 
 	for (;;) {
