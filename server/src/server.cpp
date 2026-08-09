@@ -74,8 +74,8 @@ void Server::matchmaking_tick() {
 
 		auto const game_id = m_next_game_id.fetch_add(1, std::memory_order_relaxed);
 
-		constexpr auto msg_a_v = shared::MatchFoundMsg{.game_id = game_id, .white = true};
-		constexpr auto msg_b_v = shared::MatchFoundMsg{.game_id = game_id, .white = false};
+		auto msg_a_v = shared::MatchFoundMsg{.game_id = game_id, .white = true};
+		auto msg_b_v = shared::MatchFoundMsg{.game_id = game_id, .white = false};
 
 		(void)it_a->second.connection.send_framed(shared::match_found_to_bytes(msg_a_v));
 		(void)it_b->second.connection.send_framed(shared::match_found_to_bytes(msg_b_v));
