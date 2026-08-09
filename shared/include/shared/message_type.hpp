@@ -1,5 +1,4 @@
 #pragma once
-#include <endian.h>
 #include <array>
 #include <cstdint>
 #include <cstring>
@@ -7,6 +6,18 @@
 #include <utility>
 
 namespace shared {
+namespace {
+constexpr auto htobe64(std::uint64_t value) -> std::uint64_t {
+	if constexpr (std::endian::native == std::endian::little) {
+		return std::byteswap(value);
+	} else {
+		return value;
+	}
+}
+
+constexpr auto be64toh(std::uint64_t value) -> std::uint64_t { return htobe64(value); }
+} // namespace
+
 enum class MsgType : std::uint8_t {
 	JoinQueue = 0x01,
 	LeaveQueue = 0x02,
