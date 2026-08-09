@@ -148,13 +148,11 @@
         },
         {
             "name": "server-ubuntu",
-            "displayName": "Server (Ubuntu x64)",
-            "inherits": "base-gcc",
+            "displayName": "Server Ubuntu",
+            "inherits": "base-clang",
             "binaryDir": "${sourceDir}/out/server-ubuntu",
             "cacheVariables": {
-                "CASTLEMATE_BUILD_SERVER": "ON",
-                "CMAKE_C_COMPILER": "aarch64-linux-gnu-gcc",
-                "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++"
+                "CASTLEMATE_BUILD_SERVER": "ON"
             }
         }
     ],

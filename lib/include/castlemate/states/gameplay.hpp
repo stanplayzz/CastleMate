@@ -10,7 +10,7 @@ class App;
 
 class Gameplay : public State {
   public:
-	Gameplay(gsl::not_null<App*> app, bool white, std::unique_ptr<GameConnection> connection);
+	Gameplay(gsl::not_null<App*> app, bool white);
 
 	auto update() -> std::unique_ptr<State> override;
 	void draw(le::IRenderer& renderer) const override;

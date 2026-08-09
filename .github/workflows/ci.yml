@@ -25,6 +25,8 @@ jobs:
             build_args: -- -v
           - preset: ninja-clang
             build_args: -- -v
+          - preset: server-ubuntu
+            build_args: -- -v
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6

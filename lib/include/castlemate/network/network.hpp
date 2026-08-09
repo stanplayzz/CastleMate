@@ -1,6 +1,7 @@
 #pragma once
 #include "castlemate/network/lan_discovery.hpp"
 #include <bnet/context.hpp>
+#include <shared/message_type.hpp>
 
 namespace CastleMate {
 class Network {
@@ -21,6 +22,7 @@ class Network {
 
 	void reset();
 
+	[[nodiscard]] auto matched_game() const -> std::optional<shared::MatchFoundMsg> { return m_matched_game; }
 	[[nodiscard]] auto get_connection() -> bnet::Connection* { return m_connection.get(); }
 	[[nodiscard]] auto lan_hosts() const -> std::span<bnet::Address const> { return m_lan_discovery.hosts(); }
 
@@ -28,6 +30,7 @@ class Network {
 	void update_matchmaking();
 
 	LanDiscovery m_lan_discovery{};
+	std::optional<shared::MatchFoundMsg> m_matched_game{};
 
 	std::unique_ptr<bnet::Listener> m_listener{};
 	std::unique_ptr<bnet::Connection> m_connection{};

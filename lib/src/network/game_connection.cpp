@@ -1,5 +1,3 @@
-#include <utility>
-
 #include "castlemate/network/game_connection.hpp"
 
 using namespace std::chrono_literals;
@@ -9,8 +7,8 @@ namespace {
 constexpr auto poll_interval_v = std::chrono::milliseconds{100};
 }
 
-GameConnection::GameConnection(bnet::Connection connection) : m_connection(std::move(connection)) {
-	auto res = m_connection.set_timeout(poll_interval_v); // NOLINT
+GameConnection::GameConnection(gsl::not_null<bnet::Connection*> connection) : m_connection(connection) {
+	auto res = m_connection->set_timeout(poll_interval_v); // NOLINT
 	if (!res) { return; }
 
 	m_recv_thread = std::jthread{[this](std::stop_token const& token) {
@@ -20,7 +18,7 @@ GameConnection::GameConnection(bnet::Connection connection) : m_connection(std::
 
 void GameConnection::send_move(Move move) {
 	auto bytes = std::as_bytes(std::span{&move, 1});
-	if (auto result = m_connection.send_framed(bytes); !result) { m_state = ConnectionState::Disconnected; }
+	if (auto result = m_connection->send_framed(bytes); !result) { m_state = ConnectionState::Disconnected; }
 }
 
 auto GameConnection::poll_move() -> std::optional<Move> {
@@ -37,7 +35,7 @@ void GameConnection::receive_loop(std::stop_token const& token) {
 
 	auto buffer = std::array<std::byte, sizeof(Move)>{};
 	while (!token.stop_requested()) {
-		auto result = m_connection.receive_framed(buffer);
+		auto result = m_connection->receive_framed(buffer);
 		if (!result) {
 			if (result.error() == bnet::Error::TimedOut) {
 				if (std::chrono::steady_clock::now() - last_activity >= 10s) { m_state = ConnectionState::TimedOut; }

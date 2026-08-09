@@ -1,6 +1,7 @@
 #pragma once
 #include "castlemate/core/move.hpp"
 #include <bnet/connection.hpp>
+#include <gsl/pointers>
 #include <mutex>
 #include <queue>
 
@@ -13,7 +14,7 @@ enum class ConnectionState : std::uint8_t {
 
 class GameConnection { // NOLINT
   public:
-	explicit GameConnection(bnet::Connection connection);
+	explicit GameConnection(gsl::not_null<bnet::Connection*> connection);
 
 	void send_move(Move move);
 
@@ -24,7 +25,7 @@ class GameConnection { // NOLINT
   private:
 	void receive_loop(std::stop_token const& token);
 
-	bnet::Connection m_connection;
+	bnet::Connection* m_connection;
 	std::jthread m_recv_thread{};
 	std::atomic<ConnectionState> m_state{ConnectionState::Connected};
 

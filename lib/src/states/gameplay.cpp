@@ -5,9 +5,9 @@
 #include "castlemate/utils/conversion.hpp"
 
 namespace CastleMate {
-Gameplay::Gameplay(gsl::not_null<App*> app, bool white, std::unique_ptr<GameConnection> connection)
-	: m_app(app), m_connection(std::move(connection)), m_white_bottom(white) {
-	if (m_connection) {
+Gameplay::Gameplay(gsl::not_null<App*> app, bool white) : m_app(app), m_white_bottom(white) {
+	if (m_app->network().matched_game()) {
+		m_connection = std::make_unique<GameConnection>(m_app->network().get_connection());
 		m_move_source = std::make_unique<OnlineMoveSource>(white);
 	} else {
 		m_move_source = std::make_unique<LocalMoveSource>();

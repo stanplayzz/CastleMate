@@ -90,11 +90,8 @@ auto Menu::update() -> std::unique_ptr<State> {
 		}
 	}
 
-	if (m_to_local_game) { return std::make_unique<Gameplay>(m_app, m_choose_color_menu.white_selected, nullptr); }
-
-	if (auto* conn = m_app->network().get_connection(); conn) {
-		return std::make_unique<Gameplay>(m_app, true, std::make_unique<GameConnection>(std::move(*conn)));
-	}
+	if (m_to_local_game) { return std::make_unique<Gameplay>(m_app, m_choose_color_menu.white_selected); }
+	if (auto game = m_app->network().matched_game(); game) { return std::make_unique<Gameplay>(m_app, game->white); }
 
 	if (m_choose_join_lan) { sync_join_lan_menu(); }
 
