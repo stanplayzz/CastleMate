@@ -8,7 +8,7 @@
 
 namespace shared {
 namespace {
-constexpr auto htobe64(std::uint64_t value) -> std::uint64_t {
+constexpr auto host_to_big_endian(std::uint64_t value) -> std::uint64_t {
 	if constexpr (std::endian::native == std::endian::little) {
 		return std::byteswap(value);
 	} else {
@@ -16,7 +16,7 @@ constexpr auto htobe64(std::uint64_t value) -> std::uint64_t {
 	}
 }
 
-constexpr auto be64toh(std::uint64_t value) -> std::uint64_t { return htobe64(value); }
+constexpr auto big_endian_to_host(std::uint64_t value) -> std::uint64_t { return host_to_big_endian(value); }
 } // namespace
 
 enum class MsgType : std::uint8_t {
@@ -36,7 +36,7 @@ struct MatchFoundMsg {
 inline auto match_found_to_bytes(MatchFoundMsg const& msg) -> std::array<std::byte, 10> {
 	auto buffer = std::array<std::byte, 10>{};
 	buffer.at(0) = std::byte{std::to_underlying(MsgType::MatchFound)};
-	auto game_id = htobe64(msg.game_id);
+	auto game_id = host_to_big_endian(msg.game_id);
 	std::memcpy(buffer.data() + 1, &game_id, 8); // NOLINT
 	buffer.at(9) = std::byte{msg.white};
 	return buffer;
@@ -46,6 +46,6 @@ inline auto bytes_to_match_found(std::span<std::byte const> data) -> MatchFoundM
 	if (data.size() < 10) { return {}; }
 	auto game_id = std::uint64_t{};
 	std::memcpy(&game_id, data.data() + 1, 8); // NOLINT
-	return {.game_id = be64toh(game_id), .white = static_cast<bool>(data[9])};
+	return {.game_id = big_endian_to_host(game_id), .white = static_cast<bool>(data[9])};
 }
 } // namespace shared
