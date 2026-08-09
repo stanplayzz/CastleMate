@@ -211,6 +211,7 @@ void Menu::create_game_mode_menu() {
 	menu.online.on_click = [this]() {
 		m_choose_mode = false;
 		m_searching_online = true;
+		m_app->network().search_match();
 	};
 
 	menu.back.on_click = [this]() {
@@ -249,6 +250,7 @@ void Menu::create_searching_online_menu() {
 
 	menu.cancel.on_click = [this]() {
 		m_searching_online = false;
+		m_app->network().cancel_search();
 	};
 }
 

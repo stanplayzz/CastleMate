@@ -1,7 +1,12 @@
 #include "castlemate/network/network.hpp"
 #include "castlemate/utils/constants.hpp"
+#include <shared/message_type.hpp>
 
 namespace CastleMate {
+namespace {
+constexpr auto msg_to_bytes(shared::MsgType msg) { return std::as_bytes(std::span{&msg, 1}); }
+} // namespace
+
 void Network::host_lan() {
 	reset();
 
@@ -30,8 +35,15 @@ void Network::join_lan(bnet::Address const& host) {
 
 void Network::search_match() {
 	reset();
+
 	auto connection = bnet::Connection::connect({.host = server_host, .port = game_port_v});
+	if (!connection) { throw std::runtime_error{std::string{bnet::to_string_view(connection.error())}}; }
+	m_connection = std::make_unique<bnet::Connection>(std::move(*connection));
+
+	(void)connection->send_framed(msg_to_bytes(shared::MsgType::JoinQueue));
 }
+
+void Network::cancel_search() {}
 
 void Network::update() {
 	m_lan_discovery.poll();

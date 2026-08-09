@@ -1,19 +1,15 @@
-#include <bnet/listener.hpp>
+#include "server/server.hpp"
 #include <print>
 
-namespace {
-constexpr auto server_port_v = 5000;
-}
-
 auto main() -> int {
-	auto listener = bnet::Listener::create(server_port_v);
-	if (!listener) { throw std::runtime_error{std::string{bnet::to_string_view(listener.error())}}; }
-
-	for (;;) {
-		auto connection = listener->accept();
-		if (!connection) { continue; }
-
-		std::println("Connection accepted.");
+	try {
+		server::Server{}.run();
+	} catch (std::exception const& e) {
+		std::println("PANIC: {}", e.what());
+		return EXIT_FAILURE;
+	} catch (...) {
+		std::println("PANIC!");
+		return EXIT_FAILURE;
 	}
 
 	return EXIT_SUCCESS;
