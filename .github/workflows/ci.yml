@@ -30,6 +30,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+        with: 
+          submodules: recursive
       - name: init linux
         if: runner.os == 'Linux'
         run: |
