@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         platform: [x64-linux, arm64-linux, x64-windows]
-        preset: [ninja-gcc, ninja-clang, vs26]
+        preset: [ninja-gcc, ninja-clang, server-ubuntu, vs26]
         exclude:
           - platform: x64-linux
             preset: vs26
