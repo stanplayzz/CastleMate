@@ -7,7 +7,7 @@ using namespace std::chrono_literals;
 
 namespace CastleMate {
 namespace {
-constexpr auto broadcast_addr_v = bnet::Address{.host = "255.255.255.255", .port = lan_port_v};
+auto const broadcast_addr_v = bnet::Address{.host = "255.255.255.255", .port = lan_port_v};
 constexpr std::string_view ping_message_v{"castlemate-client"};
 constexpr std::string_view ack_message_v{"castlemate-server"};
 } // namespace
