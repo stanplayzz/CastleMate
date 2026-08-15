@@ -145,6 +145,15 @@
                 "value": "x64",
                 "strategy": "external"
             }
+        },
+        {
+            "name": "server-ubuntu",
+            "displayName": "Server Ubuntu",
+            "inherits": "base-clang",
+            "binaryDir": "${sourceDir}/out/server-ubuntu",
+            "cacheVariables": {
+                "CASTLEMATE_BUILD_SERVER": "ON"
+            }
         }
     ],
     "buildPresets": [
@@ -197,6 +206,11 @@
             "name": "UBSan Debug",
             "configurePreset": "ninja-ubsan",
             "configuration": "Debug"
+        },
+        {
+            "name": "Server Ubuntu Release",
+            "configurePreset": "server-ubuntu",
+            "configuration": "Release"
         }
     ],
     "testPresets": [

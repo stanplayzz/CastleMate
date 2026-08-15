@@ -8,9 +8,11 @@
 namespace CastleMate {
 class App;
 
+enum class PendingConfirm : std::uint8_t { None, Resign, Draw, DrawAccept };
+
 class Gameplay : public State {
   public:
-	Gameplay(gsl::not_null<App*> app, bool white, std::unique_ptr<MoveSource> move_source);
+	Gameplay(gsl::not_null<App*> app, bool white);
 
 	auto update() -> std::unique_ptr<State> override;
 	void draw(le::IRenderer& renderer) const override;
@@ -20,11 +22,17 @@ class Gameplay : public State {
 	glm::vec2 m_mouse_pos{};
 
 	gsl::not_null<App*> m_app;
+	std::unique_ptr<le::IFont> m_font{};
 
+	std::unique_ptr<GameConnection> m_connection{};
 	std::unique_ptr<MoveSource> m_move_source{};
+
 	std::unique_ptr<Board> m_board{};
 	std::unique_ptr<BoardView> m_board_view{};
 	std::unique_ptr<SideMenu> m_side_menu{};
+
+	std::unique_ptr<ui::ConfirmDialog> m_confirm_dialog{};
+	PendingConfirm m_pending_confirm{};
 
 	bool m_white_bottom{};
 

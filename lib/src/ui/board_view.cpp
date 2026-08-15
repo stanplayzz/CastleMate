@@ -12,6 +12,8 @@ BoardView::BoardView(gsl::not_null<App const*> app) : m_app(app) {
 
 	m_font = app->create_asset_loader().load<le::IFont>("fonts/CormorantGaramond.ttf");
 	if (!m_font) { throw std::runtime_error{"Failed to load font"}; }
+
+	m_promotion_dialog = std::make_unique<ui::PromotionDialog>(m_app);
 }
 
 void BoardView::draw(le::IRenderer& renderer) const {
@@ -34,11 +36,7 @@ void BoardView::draw(le::IRenderer& renderer) const {
 
 	m_square_outline->draw(renderer);
 
-	if (m_show_promotion) {
-		m_promotion_ui.border.draw(renderer);
-		m_promotion_ui.background.draw(renderer);
-		for (auto const& c : m_promotion_ui.choices) { c.draw(renderer); }
-	}
+	if (m_promotion_dialog->is_open()) { m_promotion_dialog->draw(renderer); }
 
 	m_end_text.draw(renderer);
 	m_end_sub_text.draw(renderer);
@@ -83,6 +81,8 @@ void BoardView::end_game(GameEnding ending) {
 	auto string = std::string{};
 	if (ending.draw) {
 		string = "DRAW!";
+	} else if (ending.resign) {
+		string = ending.white_won ? "BLACK RESIGNED!" : "WHITE RESIGNED!";
 	} else {
 		string = ending.white_won ? "WHITE WON!" : "BLACK WON!";
 	}
@@ -144,34 +144,5 @@ void BoardView::update_pieces(bool white_bottom) {
 
 		m_piece_sprites.back().transform.position = pos;
 	}
-}
-
-void BoardView::create_promotion(bool white) {
-	auto const pieces = white ? std::array{WR, WN, WB, WQ} : std::array{BR, BN, BB, BQ};
-
-	auto sprite_size = glm::vec2{board_size_v.y * 0.14f};
-
-	for (std::size_t i = 0; i < 4; i++) {
-		constexpr auto type_map = std::array<int, 6>{5, 3, 2, 4, 1, 0};
-
-		int row = (pieces.at(i) >= BP);
-		int col = type_map.at(static_cast<std::size_t>(pieces.at(i) % 6));
-
-		constexpr auto cellW = 1.f / 6.f;
-		constexpr auto cellH = 1.f / 2.f;
-
-		auto uvMin = glm::vec2{static_cast<float>(col) * cellW, static_cast<float>(row) * cellH};
-		auto uvMax = glm::vec2{uvMin.x + cellW, uvMin.y + cellH};
-		m_promotion_ui.choices.at(i).set_base_size(sprite_size);
-		m_promotion_ui.choices.at(i).set_texture(m_piece_texture.get());
-		m_promotion_ui.choices.at(i).set_uv({.lt = uvMin, .rb = uvMax});
-		m_promotion_ui.choices.at(i).transform.position = {
-			(sprite_size.x * -1.5f) + (static_cast<float>(i) * sprite_size.x), 0};
-	}
-
-	m_promotion_ui.background.create(glm::vec2{sprite_size.x * 4.f, sprite_size.y});
-	m_promotion_ui.background.tint = Theme::from_name<kvf::Color>({"ui_background"});
-	m_promotion_ui.border.create(glm::vec2{sprite_size.x * 4.f, sprite_size.y} + sprite_size * 0.1f);
-	m_promotion_ui.border.tint = Theme::from_name<kvf::Color>({"ui_border"});
 }
 } // namespace CastleMate

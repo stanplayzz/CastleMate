@@ -1,6 +1,7 @@
 #pragma once
 #include "castlemate/core/game_ending.hpp"
 #include "castlemate/core/piece.hpp"
+#include "castlemate/ui/dialog.hpp"
 #include "castlemate/ui/outline.hpp"
 #include <le2d/drawable/shape.hpp>
 #include <le2d/drawable/sprite.hpp>
@@ -25,16 +26,15 @@ class BoardView {
 	void update_board(std::uint64_t const* bitboards, bool white_bottom);
 
 	void show_promotion(bool white) {
-		if (!m_show_promotion) {
-			m_show_promotion = true;
-			create_promotion(white);
-		}
+		if (m_promotion_dialog) { m_promotion_dialog->open(white); }
 	}
-	void hide_promotion() { m_show_promotion = false; }
+	void hide_promotion() {
+		if (m_promotion_dialog) { m_promotion_dialog->close(); }
+	}
 
 	[[nodiscard]] auto get_square_outline() const -> SquareOutline& { return *m_square_outline; }
 
-	[[nodiscard]] auto get_promotion_ui() -> PromotionUI& { return m_promotion_ui; }
+	[[nodiscard]] auto get_promotion_ui() -> ui::PromotionDialog& { return *m_promotion_dialog; }
 
 	void end_game(GameEnding ending);
 
@@ -42,7 +42,6 @@ class BoardView {
 	void create_board();
 	void load_piece_texture();
 	void update_pieces(bool white_bottom);
-	void create_promotion(bool white);
 
 	gsl::not_null<App const*> m_app;
 
@@ -55,8 +54,7 @@ class BoardView {
 	std::array<Piece, 64> m_pieces{};
 	std::unique_ptr<le::ITexture> m_piece_texture{};
 
-	bool m_show_promotion{};
-	PromotionUI m_promotion_ui{};
+	std::unique_ptr<ui::PromotionDialog> m_promotion_dialog{};
 
 	std::unique_ptr<le::IFont> m_font{};
 	le::drawable::Text m_end_text{};

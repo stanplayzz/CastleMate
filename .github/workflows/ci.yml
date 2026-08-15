@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         platform: [x64-linux, arm64-linux, x64-windows]
-        preset: [ninja-gcc, ninja-clang, vs26]
+        preset: [ninja-gcc, ninja-clang, server-ubuntu, vs26]
         exclude:
           - platform: x64-linux
             preset: vs26
@@ -25,9 +25,13 @@ jobs:
             build_args: -- -v
           - preset: ninja-clang
             build_args: -- -v
+          - preset: server-ubuntu
+            build_args: -- -v
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+        with: 
+          submodules: recursive
       - name: init linux
         if: runner.os == 'Linux'
         run: |

@@ -8,6 +8,7 @@ struct GameModeMenu {
 	TextButton local{};
 	TextButton host_lan{};
 	TextButton join_lan{};
+	TextButton online{};
 	TextButton back{};
 
 	void draw(le::IRenderer& renderer) const {
@@ -15,6 +16,7 @@ struct GameModeMenu {
 		local.draw(renderer);
 		host_lan.draw(renderer);
 		join_lan.draw(renderer);
+		online.draw(renderer);
 		back.draw(renderer);
 	}
 };

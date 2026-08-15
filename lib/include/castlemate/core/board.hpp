@@ -10,7 +10,7 @@ class Board {
   public:
 	Board(gsl::not_null<App*> app);
 
-	void click_square(int sq, SquareOutline& outline, bool white_bottom);
+	void click_square(std::uint8_t sq, SquareOutline& outline, bool white_bottom);
 
 	void set_promotion(Piece p);
 
@@ -39,6 +39,13 @@ class Board {
 		return m_has_ended ? std::optional<GameEnding>(m_ending) : std::nullopt;
 	}
 
+	[[nodiscard]] auto white_turn() const { return m_white_turn; }
+
+	void set_ending(GameEnding ending) {
+		m_has_ended = true;
+		m_ending = ending;
+	}
+
 	void move(Move m);
 
   private:
@@ -51,7 +58,7 @@ class Board {
 
 	Position m_position;
 
-	std::optional<int> m_selected_sq{};
+	std::optional<std::uint8_t> m_selected_sq{};
 	bool m_update_view{};
 
 	bool m_white_turn{true};

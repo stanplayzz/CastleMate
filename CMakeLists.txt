@@ -11,24 +11,34 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_DEBUG_POSTFIX "-d")
 set(CMAKE_BUILD_RPATH "$ORIGIN")
 
+option(CASTLEMATE_BUILD_SERVER "Build dedicated server" OFF)
+
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --remote --recursive
                     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
 
-add_subdirectory(ext)
-add_subdirectory(lib)
-add_subdirectory(app)
+add_subdirectory(shared)
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if(CASTLEMATE_BUILD_SERVER)
+    add_subdirectory(ext/bnet)
+    add_subdirectory(server)
+else()
+    add_subdirectory(ext)
+    add_subdirectory(lib)
+    add_subdirectory(app)
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(${PROJECT_NAME} PRIVATE
         -Wall -Wextra -Wpedantic -Wconversion -Werror=return-type
         $<$<NOT:$<CONFIG:Debug>>:-Werror>
     )
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        /W4
-        $<$<NOT:$<CONFIG:Debug>>:/WX>
-    )
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            /W4
+            $<$<NOT:$<CONFIG:Debug>>:/WX>
+        )
+    endif()
 endif()
+
