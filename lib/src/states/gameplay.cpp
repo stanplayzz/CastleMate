@@ -112,9 +112,12 @@ void Gameplay::handle_input() {
 					}
 				} else if (m_move_source->is_turn()) {
 					auto pos = screen_to_sq(window_to_board(m_mouse_pos, m_app->get_context().window_size()));
-					auto sq = static_cast<std::uint8_t>(pos.x + (pos.y * 8));
-					sq = m_white_bottom ? sq : 63 - sq;
-					if (sq >= 0) { m_board->click_square(sq, m_board_view->get_square_outline(), m_white_bottom); }
+					auto sq = pos.x + (pos.y * 8);
+					if (sq >= 0 && sq < 64) {
+						sq = m_white_bottom ? sq : 63 - sq;
+						m_board->click_square(static_cast<std::uint8_t>(sq), m_board_view->get_square_outline(),
+											  m_white_bottom);
+					}
 				}
 			}
 		}
