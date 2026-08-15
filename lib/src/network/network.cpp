@@ -6,7 +6,9 @@ using namespace std::chrono_literals;
 
 namespace CastleMate {
 namespace {
-constexpr auto msg_to_bytes(shared::MsgType msg) { return std::as_bytes(std::span{&msg, 1}); }
+constexpr auto msg_to_bytes(shared::MsgType msg) -> std::array<std::byte, 1> {
+	return {std::byte{std::to_underlying(msg)}};
+}
 } // namespace
 
 void Network::host_lan() {
@@ -42,8 +44,6 @@ void Network::search_match() {
 	auto connection = bnet::Connection::connect({.host = server_host, .port = game_port_v});
 	if (!connection) { throw std::runtime_error{std::string{bnet::to_string_view(connection.error())}}; }
 	m_connection = std::make_unique<bnet::Connection>(std::move(*connection));
-
-	(void)m_connection->set_timeout(1ms);
 
 	(void)m_connection->send_framed(msg_to_bytes(shared::MsgType::JoinQueue));
 }

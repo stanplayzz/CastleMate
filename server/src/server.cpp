@@ -46,6 +46,8 @@ void Server::run() {
 	}};
 
 	for (;;) {
+		cleanup_clients();
+
 		auto connection = m_listener->accept();
 		if (!connection) {
 			std::this_thread::sleep_for(5ms);
@@ -67,8 +69,6 @@ void Server::run() {
 		client->worker = std::jthread{[this, id](std::stop_token const& token) {
 			handle_client(token, id);
 		}};
-
-		cleanup_clients();
 	}
 }
 
