@@ -152,7 +152,8 @@
             "inherits": "base-clang",
             "binaryDir": "${sourceDir}/out/server-ubuntu",
             "cacheVariables": {
-                "CASTLEMATE_BUILD_SERVER": "ON"
+                "CASTLEMATE_BUILD_SERVER": "ON",
+                "CMAKE_CXX_FLAGS": "-stdlib=libstdc++"
             }
         }
     ],
