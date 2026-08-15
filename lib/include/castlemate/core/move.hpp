@@ -1,5 +1,6 @@
 #pragma once
 #include "castlemate/core/magic.hpp"
+#include "castlemate/core/piece.hpp"
 #include "castlemate/core/position.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include <array>
@@ -7,8 +8,8 @@
 
 namespace CastleMate {
 struct Move {
-	int from{};
-	int to{};
+	std::uint8_t from{};
+	std::uint8_t to{};
 	Piece promotion{COUNT_};
 };
 
@@ -228,7 +229,7 @@ inline auto apply_move(Position& pos, Move m) -> std::optional<Piece> {
 	return captured;
 }
 
-inline auto get_legal_moves(Position pos, int sq) -> std::vector<int> {
+inline auto get_legal_moves(Position pos, std::uint8_t sq) -> std::vector<int> {
 	auto moves = std::vector<int>{};
 	auto friendly = get_bit(pos.white_occ, sq) ? pos.white_occ : pos.black_occ;
 	auto white = get_bit(pos.white_occ, sq);
@@ -236,7 +237,7 @@ inline auto get_legal_moves(Position pos, int sq) -> std::vector<int> {
 	auto pseudo = get_moves(pos, sq, friendly);
 	if (get_bit(white ? pos.bb[WK] : pos.bb[BK], sq)) { pseudo |= castle_moves(pos, white); }
 	while (pseudo) {
-		auto to = static_cast<int>(pop_lsb(pseudo));
+		auto to = static_cast<std::uint8_t>(pop_lsb(pseudo));
 		auto temp = pos;
 		apply_move(temp, {.from = sq, .to = to});
 		if (!in_check(temp, white)) { moves.push_back(to); }
@@ -251,7 +252,7 @@ inline auto in_checkmate(Position const& pos, bool white) {
 	auto friendly = white ? pos.white_occ : pos.black_occ;
 	auto temp = friendly;
 	while (temp) {
-		auto sq = static_cast<int>(pop_lsb(temp));
+		auto sq = static_cast<std::uint8_t>(pop_lsb(temp));
 		if (!get_legal_moves(pos, sq).empty()) { return false; }
 	}
 	return true;
@@ -263,7 +264,7 @@ inline auto in_stalemate(Position const& pos, bool white) {
 	auto friendly = white ? pos.white_occ : pos.black_occ;
 	auto temp = friendly;
 	while (temp) {
-		auto sq = static_cast<int>(pop_lsb(temp));
+		auto sq = static_cast<std::uint8_t>(pop_lsb(temp));
 		if (!get_legal_moves(pos, sq).empty()) { return false; }
 	}
 	return true;

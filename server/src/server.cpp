@@ -10,6 +10,13 @@ namespace server {
 namespace {
 constexpr auto port_v = 5000;
 
+auto client_to_game(std::unordered_map<std::uint64_t, Game>& games, std::uint64_t id) -> Game* {
+	for (auto& [game_id, game] : games) {
+		if (game.white_id == id || game.black_id == id) { return &game; }
+	}
+	return nullptr;
+}
+
 auto join_queue(std::vector<std::uint64_t>& queue, std::uint64_t id) {
 	if (std::ranges::find(queue, id) != queue.end()) { return; }
 	queue.push_back(id);
@@ -49,11 +56,19 @@ void Server::run() {
 
 		auto const id = m_next_id.fetch_add(1, std::memory_order_relaxed);
 
-		std::lock_guard lock{m_mutex};
-		auto [it, _] = m_clients.try_emplace(id, ClientSession{.connection = std::move(*connection), .worker = {}});
-		it->second.worker = std::jthread{[this, id](std::stop_token const& token) {
+		auto client = std::make_shared<ClientSession>();
+		client->connection = std::make_shared<bnet::Connection>(std::move(*connection));
+
+		{
+			std::lock_guard lock{m_mutex};
+			m_clients.emplace(id, client);
+		}
+
+		client->worker = std::jthread{[this, id](std::stop_token const& token) {
 			handle_client(token, id);
 		}};
+
+		cleanup_clients();
 	}
 }
 
@@ -77,18 +92,23 @@ void Server::matchmaking_tick() {
 		auto msg_a_v = shared::MatchFoundMsg{.game_id = game_id, .white = true};
 		auto msg_b_v = shared::MatchFoundMsg{.game_id = game_id, .white = false};
 
-		(void)it_a->second.connection.send_framed(shared::match_found_to_bytes(msg_a_v));
-		(void)it_b->second.connection.send_framed(shared::match_found_to_bytes(msg_b_v));
+		(void)it_a->second->connection->send_framed(shared::match_found_to_bytes(msg_a_v));
+		(void)it_b->second->connection->send_framed(shared::match_found_to_bytes(msg_b_v));
+
+		m_games.emplace(game_id, Game{.game_id = game_id, .white_id = id_a, .black_id = id_b});
 
 		std::println("[INFO] Matched {} (white) vs {} (black) into game {}", id_a, id_b, game_id);
 	}
 }
 
 void Server::handle_client(std::stop_token const& token, std::uint64_t id) {
-	bnet::Connection* connection{};
+	std::shared_ptr<bnet::Connection> connection{};
 	{
 		std::lock_guard lock{m_mutex};
-		connection = &m_clients.at(id).connection;
+		auto it = m_clients.find(id);
+		if (it == m_clients.end()) { return; }
+
+		connection = it->second->connection;
 	}
 	auto buffer = std::array<std::byte, 4096>{};
 
@@ -100,32 +120,115 @@ void Server::handle_client(std::stop_token const& token, std::uint64_t id) {
 		}
 		on_client_message(id, std::span{buffer.data(), *result});
 	}
-	remove_client(id);
-}
 
-void Server::remove_client(std::uint64_t id) {
 	std::lock_guard lock{m_mutex};
 	auto it = m_clients.find(id);
 	if (it == m_clients.end()) { return; }
 
-	it->second.worker.request_stop();
-	it->second.worker.detach();
-	std::erase(m_queue, id);
+	it->second->connection = nullptr;
+}
+
+void Server::cleanup_clients() {
+	std::lock_guard lock{m_mutex};
+	for (auto it = m_clients.begin(); it != m_clients.end();) {
+		if (!it->second->connection) {
+			std::println("[INFO] Removing player with id: {}", it->first);
+			std::erase(m_queue, it->first);
+			it = m_clients.erase(it);
+
+		} else {
+			++it;
+		}
+	}
 }
 
 void Server::on_client_message(std::uint64_t id, std::span<std::byte const> data) {
 	if (data.empty()) { return; }
+
 	auto const type = static_cast<shared::MsgType>(data[0]);
 	auto const payload = data.subspan(1);
 
 	std::lock_guard lock{m_mutex};
+
 	switch (type) {
 	case shared::MsgType::JoinQueue: join_queue(m_queue, id); break;
 	case shared::MsgType::LeaveQueue: leave_queue(m_queue, id); break;
-	case shared::MsgType::Move: break;
-	case shared::MsgType::DrawOffer: break;
-	case shared::MsgType::Resign: break;
+	case shared::MsgType::Move: handle_move(id, payload); break;
+	case shared::MsgType::DrawOffer: handle_draw_offer(id); break;
+	case shared::MsgType::DrawAccept: handle_draw_accepted(id); break;
+	case shared::MsgType::Resign: handle_resign(id); break;
 	default: break;
 	}
+}
+
+void Server::handle_move(std::uint64_t id, std::span<std::byte const> data) {
+	auto* game = client_to_game(m_games, id);
+	if (!game) { return; }
+
+	auto const other_id = (id == game->white_id) ? game->black_id : game->white_id;
+
+	auto it = m_clients.find(other_id);
+	if (it == m_clients.end()) { return; }
+
+	auto buffer = std::vector<std::byte>(data.size() + 1);
+	buffer[0] = std::byte{std::to_underlying(shared::MsgType::Move)};
+	std::ranges::copy(data, buffer.begin() + 1);
+
+	if (auto res = it->second->connection->send_framed(buffer); !res) {
+		std::println("[ERROR] Failed to send message: {}", bnet::to_string_view(res.error()));
+	}
+}
+
+void Server::handle_draw_offer(std::uint64_t id) {
+	auto* game = client_to_game(m_games, id);
+	if (!game) { return; }
+
+	auto const other_id = (id == game->white_id) ? game->black_id : game->white_id;
+	auto it = m_clients.find(other_id);
+	if (it == m_clients.end()) { return; }
+
+	auto const msg = std::array{std::byte{std::to_underlying(shared::MsgType::DrawOffer)}};
+	if (auto res = it->second->connection->send_framed(msg); !res) {
+		std::println("[ERROR] Failed to send message: {}", bnet::to_string_view(res.error()));
+	}
+}
+
+void Server::handle_draw_accepted(std::uint64_t id) {
+	auto* game = client_to_game(m_games, id);
+	if (!game) { return; }
+
+	auto const other_id = (id == game->white_id) ? game->black_id : game->white_id;
+	auto it = m_clients.find(other_id);
+	if (it == m_clients.end()) { return; }
+
+	auto const msg = shared::GameOverMsg{.reason = shared::GameOverReason::Draw};
+
+	if (auto res = it->second->connection->send_framed(shared::game_over_to_bytes(msg)); !res) {
+		std::println("[ERROR] Failed to send message: {}", bnet::to_string_view(res.error()));
+	}
+
+	std::println("[INFO] Removing game with id: {}", game->game_id);
+	m_games.erase(game->game_id);
+}
+
+void Server::handle_resign(std::uint64_t id) {
+	auto* game = client_to_game(m_games, id);
+	if (!game) { return; }
+
+	auto const other_id = (id == game->white_id) ? game->black_id : game->white_id;
+	auto it = m_clients.find(other_id);
+	if (it == m_clients.end()) { return; }
+
+	auto const msg = shared::GameOverMsg{
+		.reason = shared::GameOverReason::Resign,
+		.white_won = (id != game->white_id),
+	};
+
+	if (auto res = it->second->connection->send_framed(shared::game_over_to_bytes(msg)); !res) {
+		std::println("[ERROR] Failed to send message: {}", bnet::to_string_view(res.error()));
+	}
+
+	std::println("[INFO] Removing game with id: {}", game->game_id);
+	m_games.erase(game->game_id);
 }
 } // namespace server

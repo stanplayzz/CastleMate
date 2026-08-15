@@ -48,8 +48,10 @@ void CapturedPieces::order() {
 		}
 	};
 
-	layout(m_white_pieces, m_bounds.lt.y);
+	auto start = m_bounds.lt.y;
+	layout(m_white_pieces, start);
 
-	layout(m_black_pieces, m_bounds.lt.y + (cellSize * 3.f));
+	auto rows = std::ceil(static_cast<float>(m_white_pieces.size()) / 5.f);
+	layout(m_black_pieces, m_bounds.lt.y - (cellSize * rows));
 }
 } // namespace CastleMate::ui

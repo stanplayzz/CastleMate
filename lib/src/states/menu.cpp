@@ -5,6 +5,8 @@
 
 namespace CastleMate {
 Menu::Menu(gsl::not_null<App*> app) : m_app(app) {
+	m_app->network().clear_matched_game();
+
 	queen_move(0, 0, 0);
 
 	m_font = app->create_asset_loader().load<le::IFont>("fonts/CormorantGaramond.ttf");

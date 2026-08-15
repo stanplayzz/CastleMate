@@ -77,5 +77,6 @@ void Network::reset() {
 	m_connection.reset();
 	m_listener.reset();
 	m_lan_discovery.reset();
+	m_matched_game.reset();
 }
 } // namespace CastleMate

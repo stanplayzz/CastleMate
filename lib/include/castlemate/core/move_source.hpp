@@ -9,14 +9,14 @@ class MoveSource : klib::Polymorphic { // NOLINT
 	virtual ~MoveSource() = default;
 
 	[[nodiscard]] virtual auto is_turn() const -> bool = 0;
-	[[nodiscard]] virtual auto poll_remote_move(GameConnection* conn) -> std::optional<Move> = 0;
+	[[nodiscard]] virtual auto poll_remote_move(GameConnection::IncomingEvent event) -> std::optional<Move> = 0;
 	virtual void send_move(Move move, GameConnection* conn) = 0;
 };
 
 class LocalMoveSource final : public MoveSource {
   public:
 	[[nodiscard]] auto is_turn() const -> bool override { return true; }
-	[[nodiscard]] auto poll_remote_move(GameConnection* /*conn*/) -> std::optional<Move> override {
+	[[nodiscard]] auto poll_remote_move(GameConnection::IncomingEvent /*event*/) -> std::optional<Move> override {
 		return std::nullopt;
 	}
 	void send_move(Move /*move*/, GameConnection* /*conn*/) override {};
@@ -28,12 +28,10 @@ class OnlineMoveSource final : public MoveSource {
 
 	[[nodiscard]] auto is_turn() const -> bool override { return m_turn; }
 
-	[[nodiscard]] auto poll_remote_move(GameConnection* conn) -> std::optional<Move> override {
-		if (!conn) { return std::nullopt; }
-		auto move = conn->poll_move();
-		if (!move) { return std::nullopt; }
+	[[nodiscard]] auto poll_remote_move(GameConnection::IncomingEvent event) -> std::optional<Move> override {
+		if (event.kind != GameConnection::IncomingEvent::Kind::Move) { return std::nullopt; }
 		m_turn = true;
-		return move;
+		return event.move;
 	}
 
 	void send_move(Move move, GameConnection* conn) override {

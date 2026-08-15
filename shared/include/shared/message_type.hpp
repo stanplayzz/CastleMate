@@ -24,8 +24,10 @@ enum class MsgType : std::uint8_t {
 	LeaveQueue = 0x02,
 	MatchFound = 0x03,
 	Move = 0x04,
-	DrawOffer = 0x05,
-	Resign = 0x06,
+	Resign = 0x05,
+	DrawOffer = 0x06,
+	DrawAccept = 0x07,
+	GameOver = 0x08,
 };
 
 struct MatchFoundMsg {
@@ -47,5 +49,28 @@ inline auto bytes_to_match_found(std::span<std::byte const> data) -> MatchFoundM
 	auto game_id = std::uint64_t{};
 	std::memcpy(&game_id, data.data() + 1, 8); // NOLINT
 	return {.game_id = big_endian_to_host(game_id), .white = static_cast<bool>(data[9])};
+}
+
+enum class GameOverReason : std::uint8_t { Resign, Draw, Checkmate };
+
+struct GameOverMsg {
+	GameOverReason reason{};
+	bool white_won{};
+};
+
+inline auto game_over_to_bytes(GameOverMsg const& msg) -> std::array<std::byte, 3> {
+	std::array<std::byte, 3> buffer{};
+	buffer[0] = std::byte{std::to_underlying(MsgType::GameOver)};
+	buffer[1] = std::byte{std::to_underlying(msg.reason)};
+	buffer[2] = std::byte{msg.white_won};
+	return buffer;
+}
+
+inline auto bytes_to_game_over(std::span<std::byte const> data) -> GameOverMsg {
+	if (data.size() < 3) { return {}; }
+	return GameOverMsg{
+		.reason = static_cast<GameOverReason>(data[1]),
+		.white_won = static_cast<bool>(data[2]),
+	};
 }
 } // namespace shared

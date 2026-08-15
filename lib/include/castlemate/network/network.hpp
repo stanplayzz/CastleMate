@@ -22,6 +22,8 @@ class Network {
 
 	void reset();
 
+	void clear_matched_game() { m_matched_game.reset(); }
+
 	[[nodiscard]] auto matched_game() const -> std::optional<shared::MatchFoundMsg> { return m_matched_game; }
 	[[nodiscard]] auto get_connection() -> bnet::Connection* { return m_connection.get(); }
 	[[nodiscard]] auto lan_hosts() const -> std::span<bnet::Address const> { return m_lan_discovery.hosts(); }

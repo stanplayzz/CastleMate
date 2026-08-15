@@ -12,7 +12,7 @@ Board::Board(gsl::not_null<App*> app) : m_app(app) {
 	if (!m_move_buffer || !m_capture_buffer) { throw std::runtime_error{"Failed to load audio buffer"}; }
 }
 
-void Board::click_square(int sq, SquareOutline& outline, bool white_bottom) {
+void Board::click_square(std::uint8_t sq, SquareOutline& outline, bool white_bottom) {
 	if (m_pending_move) { return; }
 
 	auto display_sq = white_bottom ? sq : 63 - sq;

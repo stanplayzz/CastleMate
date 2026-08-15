@@ -30,7 +30,7 @@ inline auto needs_disambig(Position const& pos, Move m, Piece white_piece, Piece
 	bool rank_ambig = false;
 
 	while (others) {
-		auto sq = static_cast<int>(pop_lsb(others));
+		auto sq = static_cast<std::uint8_t>(pop_lsb(others));
 		auto legal = get_legal_moves(pos, sq);
 		if (std::ranges::contains(legal, m.to)) {
 			if (sq % 8 == m.from % 8) {
