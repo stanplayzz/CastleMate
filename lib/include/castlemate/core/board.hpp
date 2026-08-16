@@ -49,7 +49,6 @@ class Board {
 	void move(Move m);
 
   private:
-	void load_board();
 	void update_occ();
 
 	void finish_move(Move m);
