@@ -1,5 +1,6 @@
 #pragma once
 #include "castlemate/core/move.hpp"
+#include "castlemate/core/movegen.hpp"
 #include <algorithm>
 
 namespace CastleMate {
@@ -21,7 +22,7 @@ constexpr std::array<char, COUNT_> promo_char = {
 	' ', 'N', 'B', 'R', 'Q', ' ', // black
 };
 
-inline auto needs_disambig(Position const& pos, Move m, Piece white_piece, Piece black_piece) -> std::pair<bool, bool> {
+inline auto needs_disambig(Position& pos, Move m, Piece white_piece, Piece black_piece) -> std::pair<bool, bool> {
 	auto is_white = get_bit(pos.white_occ, m.from);
 	auto target_piece = is_white ? white_piece : black_piece;
 
@@ -31,8 +32,8 @@ inline auto needs_disambig(Position const& pos, Move m, Piece white_piece, Piece
 
 	while (others) {
 		auto sq = static_cast<std::uint8_t>(pop_lsb(others));
-		auto legal = get_legal_moves(pos, sq);
-		if (std::ranges::contains(legal, m.to)) {
+		auto legal = legal_moves(pos);
+		if (std::ranges::contains(legal, m)) {
 			if (sq % 8 == m.from % 8) {
 				rank_ambig = true;
 			} else {
@@ -44,7 +45,7 @@ inline auto needs_disambig(Position const& pos, Move m, Piece white_piece, Piece
 };
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-inline auto to_algebraic(Move m, Position const& pos) -> std::string {
+inline auto to_algebraic(Move m, Position& pos) -> std::string {
 	auto piece_on = [&](int sq) -> Piece {
 		for (auto p = 0; p < COUNT_; p++) {
 			if (get_bit(pos.bb[p], sq)) { return static_cast<Piece>(p); }
@@ -68,15 +69,13 @@ inline auto to_algebraic(Move m, Position const& pos) -> std::string {
 		}
 
 		if (!castle_str.empty()) {
-			auto is_white = get_bit(pos.white_occ, m.from);
-			auto temp = pos;
-			apply_move(temp, m);
-			bool opponent_white = !is_white;
-			if (in_checkmate(temp, opponent_white)) {
+			auto undo = make_move(pos, m);
+			if (in_checkmate(pos)) {
 				castle_str += '#';
-			} else if (in_check(temp, opponent_white)) {
+			} else if (in_check(pos, pos.turn == Color::White)) {
 				castle_str += '+';
 			}
+			unmake_move(pos, undo);
 			return castle_str;
 		}
 	}
@@ -112,16 +111,15 @@ inline auto to_algebraic(Move m, Position const& pos) -> std::string {
 		ret += promo_char.at(m.promotion);
 	}
 
-	auto is_white = get_bit(pos.white_occ, m.from);
-	auto temp = pos;
-	apply_move(temp, m);
-	bool opponent_white = !is_white;
+	auto undo = make_move(pos, m);
 
-	if (in_checkmate(temp, opponent_white)) {
+	if (in_checkmate(pos)) {
 		ret += '#';
-	} else if (in_check(temp, opponent_white)) {
+	} else if (in_check(pos, pos.turn == Color::White)) {
 		ret += '+';
 	}
+
+	unmake_move(pos, undo);
 
 	return ret;
 }

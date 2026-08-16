@@ -1,11 +1,16 @@
 #include "castlemate/core/board.hpp"
 #include "castlemate/app.hpp"
+#include "castlemate/core/movegen.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include "castlemate/utils/constants.hpp"
 
 namespace CastleMate {
+namespace {
+constexpr auto base_fen_v = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+}
+
 Board::Board(gsl::not_null<App*> app) : m_app(app) {
-	load_board();
+	m_position = Position::from_fen(base_fen_v);
 
 	m_move_buffer = m_app->create_asset_loader().load<le::IAudioBuffer>("sounds/move.wav");
 	m_capture_buffer = m_app->create_asset_loader().load<le::IAudioBuffer>("sounds/capture.wav");
@@ -21,8 +26,8 @@ void Board::click_square(std::uint8_t sq, SquareOutline& outline, bool white_bot
 		move({.from = *m_selected_sq, .to = sq});
 		m_selected_sq = std::nullopt;
 	} else if (get_bit(m_position.occ, sq)) {
-		if ((get_bit(m_position.white_occ, sq) && !m_white_turn) ||
-			(get_bit(m_position.black_occ, sq) && m_white_turn)) {
+		if ((get_bit(m_position.white_occ, sq) && m_position.turn == Color::Black) ||
+			(get_bit(m_position.black_occ, sq) && m_position.turn == Color::White)) {
 			return;
 		}
 		m_selected_sq = sq;
@@ -39,32 +44,6 @@ void Board::set_promotion(Piece p) {
 	m_pending_move = std::nullopt;
 }
 
-void Board::load_board() {
-	// White
-	for (auto i = 0; i < 8; i++) { set_bit(m_position.bb[WP], sq(1, i)); }
-	set_bit(m_position.bb[WR], sq(0, 0));
-	set_bit(m_position.bb[WR], sq(0, 7));
-	set_bit(m_position.bb[WN], sq(0, 1));
-	set_bit(m_position.bb[WN], sq(0, 6));
-	set_bit(m_position.bb[WB], sq(0, 2));
-	set_bit(m_position.bb[WB], sq(0, 5));
-	set_bit(m_position.bb[WQ], sq(0, 3));
-	set_bit(m_position.bb[WK], sq(0, 4));
-
-	// Black
-	for (auto i = 0; i < 8; i++) { set_bit(m_position.bb[BP], sq(6, i)); }
-	set_bit(m_position.bb[BR], sq(7, 0));
-	set_bit(m_position.bb[BR], sq(7, 7));
-	set_bit(m_position.bb[BN], sq(7, 1));
-	set_bit(m_position.bb[BN], sq(7, 6));
-	set_bit(m_position.bb[BB], sq(7, 2));
-	set_bit(m_position.bb[BB], sq(7, 5));
-	set_bit(m_position.bb[BQ], sq(7, 3));
-	set_bit(m_position.bb[BK], sq(7, 4));
-
-	update_occ();
-}
-
 void Board::update_occ() {
 	auto const& bb = m_position.bb;
 	m_position.white_occ = bb[WP] | bb[WR] | bb[WN] | bb[WB] | bb[WQ] | bb[WK];
@@ -73,8 +52,8 @@ void Board::update_occ() {
 }
 
 void Board::move(Move m) {
-	auto moves = get_legal_moves(m_position, m.from);
-	if (std::ranges::find(moves, m.to) == moves.end()) { return; }
+	auto moves = legal_moves(m_position);
+	if (std::ranges::find(moves, m) == moves.end()) { return; }
 
 	// promotion
 	auto is_white = get_bit(m_position.bb[WP], m.from);
@@ -92,15 +71,15 @@ void Board::finish_move(Move m) {
 	auto move_old = m;
 	auto pos_old = m_position;
 
-	auto capture = apply_move(m_position, m);
+	auto capture = make_move(m_position, m).captured;
 	m_white_turn = !m_white_turn;
 	m_update_view = true;
 
-	if (in_checkmate(m_position, m_white_turn)) {
+	if (in_checkmate(m_position)) {
 		m_ending.white_won = !m_white_turn;
 		m_has_ended = true;
 	}
-	if (in_stalemate(m_position, m_white_turn)) {
+	if (in_stalemate(m_position)) {
 		m_ending.draw = true;
 		m_has_ended = true;
 	}

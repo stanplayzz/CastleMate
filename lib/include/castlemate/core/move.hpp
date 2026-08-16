@@ -11,6 +11,8 @@ struct Move {
 	std::uint8_t from{};
 	std::uint8_t to{};
 	Piece promotion{COUNT_};
+
+	friend constexpr bool operator==(Move const&, Move const&) = default;
 };
 
 constexpr std::uint64_t FILE_A = 0x0101010101010101;
@@ -97,7 +99,7 @@ inline auto square_attacked(Position const& pos, int sq, bool by_black) -> bool 
 
 	std::uint64_t b = 1ULL << sq;
 	auto pawn_attacks =
-		by_black ? ((b << 9) & ~FILE_H) | ((b << 7) & ~FILE_A) : ((b >> 9) & ~FILE_A) | ((b >> 7) & ~FILE_H);
+		by_black ? ((b << 9) & ~FILE_A) | ((b << 7) & ~FILE_H) : ((b >> 9) & ~FILE_H) | ((b >> 7) & ~FILE_A);
 	return (pawn_attacks & e_pawns) != 0;
 }
 
@@ -106,16 +108,16 @@ inline auto in_check(Position const& pos, bool white) {
 	return square_attacked(pos, sq, white);
 }
 
-inline auto castle_moves(Position const& pos, bool white) -> std::uint64_t {
+inline auto castle_moves(Position const& pos) -> std::uint64_t {
 	std::uint64_t ret = 0;
 
-	if (white) {
+	if (pos.turn == Color::White) {
 		if (pos.castle_wk && !get_bit(pos.occ, 5) && !get_bit(pos.occ, 6) && !in_check(pos, true) &&
 			!square_attacked(pos, 5, true) && !square_attacked(pos, 6, true)) {
 			set_bit(ret, 6);
 		}
 		if (pos.castle_wq && !get_bit(pos.occ, 1) && !get_bit(pos.occ, 2) && !get_bit(pos.occ, 3) &&
-			!in_check(pos, true) && !square_attacked(pos, 1, true) && !square_attacked(pos, 2, true)) {
+			!in_check(pos, true) && !square_attacked(pos, 3, true) && !square_attacked(pos, 2, true)) {
 			set_bit(ret, 2);
 		}
 	} else {
@@ -124,7 +126,7 @@ inline auto castle_moves(Position const& pos, bool white) -> std::uint64_t {
 			set_bit(ret, 62);
 		}
 		if (pos.castle_bq && !get_bit(pos.occ, 57) && !get_bit(pos.occ, 58) && !get_bit(pos.occ, 59) &&
-			!in_check(pos, false) && !square_attacked(pos, 57, false) && !square_attacked(pos, 58, false)) {
+			!in_check(pos, false) && !square_attacked(pos, 59, false) && !square_attacked(pos, 58, false)) {
 			set_bit(ret, 58);
 		}
 	}
@@ -133,7 +135,6 @@ inline auto castle_moves(Position const& pos, bool white) -> std::uint64_t {
 }
 
 inline auto get_moves(Position pos, int sq, std::uint64_t friendly) -> std::uint64_t {
-	auto moves = std::vector<int>{};
 	if (get_bit(pos.bb[WN], sq) || get_bit(pos.bb[BN], sq)) { return knight_move(sq, friendly); }
 	if (get_bit(pos.bb[WK], sq) || get_bit(pos.bb[BK], sq)) { return king_move(sq, friendly); }
 	if (get_bit(pos.bb[WP], sq)) { return pawn_move(sq, WP, pos, friendly); }
@@ -175,98 +176,5 @@ inline auto castle(Position& pos, Move m) {
 inline auto promote(Position& pos, Move m, bool white) {
 	clear_bit(white ? pos.bb[WP] : pos.bb[BP], m.from);
 	set_bit(pos.bb[m.promotion], m.to); // NOLINT
-}
-
-inline auto apply_move(Position& pos, Move m) -> std::optional<Piece> {
-	auto is_white = get_bit(pos.bb[WP], m.from);
-	auto is_black = get_bit(pos.bb[BP], m.from);
-
-	std::optional<Piece> captured;
-
-	for (std::size_t i = 0; i < COUNT_; ++i) {
-		if (get_bit(pos.bb[i], m.to)) { // NOLINT
-			captured = static_cast<Piece>(i);
-			break;
-		}
-	}
-
-	for (auto& bb : pos.bb) { clear_bit(bb, m.to); }
-
-	if (is_white && m.to == pos.en_passant) {
-		clear_bit(pos.bb[BP], m.to - 8);
-		clear_bit(pos.occ, m.to - 8);
-		captured = BP;
-	}
-	if (is_black && m.to == pos.en_passant) {
-		clear_bit(pos.bb[WP], m.to + 8);
-		clear_bit(pos.occ, m.to + 8);
-		captured = WP;
-	}
-
-	for (auto& bb : pos.bb) {
-		if (get_bit(bb, m.from)) {
-			if (((is_white && m.to >= 56) || (is_black && m.to < 8)) && m.promotion != COUNT_) {
-				promote(pos, m, is_white);
-				break;
-			}
-			replace_bit(bb, m.from, m.to);
-			break;
-		}
-	}
-
-	// only castles if needed
-	castle(pos, m);
-
-	pos.en_passant = -1;
-	if (is_white && (m.to - m.from == 16)) { pos.en_passant = m.from + 8; }
-	if (is_black && (m.from - m.to == 16)) { pos.en_passant = m.from - 8; }
-
-	auto const& bb = pos.bb;
-	pos.white_occ = bb[WP] | bb[WR] | bb[WN] | bb[WB] | bb[WQ] | bb[WK];
-	pos.black_occ = bb[BP] | bb[BR] | bb[BN] | bb[BB] | bb[BQ] | bb[BK];
-	pos.occ = pos.white_occ | pos.black_occ;
-
-	return captured;
-}
-
-inline auto get_legal_moves(Position pos, std::uint8_t sq) -> std::vector<int> {
-	auto moves = std::vector<int>{};
-	auto friendly = get_bit(pos.white_occ, sq) ? pos.white_occ : pos.black_occ;
-	auto white = get_bit(pos.white_occ, sq);
-
-	auto pseudo = get_moves(pos, sq, friendly);
-	if (get_bit(white ? pos.bb[WK] : pos.bb[BK], sq)) { pseudo |= castle_moves(pos, white); }
-	while (pseudo) {
-		auto to = static_cast<std::uint8_t>(pop_lsb(pseudo));
-		auto temp = pos;
-		apply_move(temp, {.from = sq, .to = to});
-		if (!in_check(temp, white)) { moves.push_back(to); }
-	}
-
-	return moves;
-}
-
-inline auto in_checkmate(Position const& pos, bool white) {
-	if (!in_check(pos, white)) { return false; }
-
-	auto friendly = white ? pos.white_occ : pos.black_occ;
-	auto temp = friendly;
-	while (temp) {
-		auto sq = static_cast<std::uint8_t>(pop_lsb(temp));
-		if (!get_legal_moves(pos, sq).empty()) { return false; }
-	}
-	return true;
-}
-
-inline auto in_stalemate(Position const& pos, bool white) {
-	if (in_check(pos, white)) { return false; }
-
-	auto friendly = white ? pos.white_occ : pos.black_occ;
-	auto temp = friendly;
-	while (temp) {
-		auto sq = static_cast<std::uint8_t>(pop_lsb(temp));
-		if (!get_legal_moves(pos, sq).empty()) { return false; }
-	}
-	return true;
 }
 } // namespace CastleMate

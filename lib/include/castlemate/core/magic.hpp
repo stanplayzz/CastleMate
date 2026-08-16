@@ -41,7 +41,7 @@ inline auto blocker_subset(std::size_t index, std::uint64_t mask) -> std::uint64
 	for (auto i = 0; i < 64; i++) {
 		if (!temp) { break; }
 		auto bit = pop_lsb(temp);
-		if (index & (1 << i)) { subset |= 1ULL << bit; }
+		if (index & (1ULL << i)) { subset |= 1ULL << bit; }
 	}
 	return subset;
 }
@@ -106,7 +106,7 @@ inline auto bishop_attack_ray(int sq, std::uint64_t blockers) -> std::uint64_t {
 // magic
 inline auto find_magic(int sq, std::uint64_t mask, bool diagonal) -> std::uint64_t {
 	auto bits = std::popcount(mask);
-	auto num_subsets = static_cast<std::size_t>(1 << bits);
+	auto num_subsets = static_cast<std::size_t>(1ULL << bits);
 
 	auto blockers = std::vector<std::uint64_t>(num_subsets);
 	auto attacks = std::vector<std::uint64_t>(num_subsets);
@@ -150,7 +150,7 @@ inline auto init_magics(bool diagonal) -> std::array<Magic, 64> {
 		m.shift = 64 - bits;
 		m.magic = find_magic(sq, m.mask, diagonal);
 
-		std::size_t num_subsets = 1 << bits;
+		std::size_t num_subsets = 1ULL << bits;
 		m.table.resize(num_subsets);
 		for (std::size_t i = 0; i < num_subsets; i++) {
 			auto blockers = blocker_subset(i, m.mask);
