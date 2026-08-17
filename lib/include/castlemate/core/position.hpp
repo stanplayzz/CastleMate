@@ -21,5 +21,6 @@ struct Position {
 	bool castle_bq{true};
 
 	static auto from_fen(std::string_view fen) -> Position;
+	[[nodiscard]] auto to_fen() const -> std::string;
 };
 } // namespace CastleMate

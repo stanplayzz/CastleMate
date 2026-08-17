@@ -1,5 +1,5 @@
 #include <castlemate/app.hpp>
-#include <castlemate/engine/perft.hpp>
+#include <castlemate/utils/perft.hpp>
 #include <print>
 
 namespace {

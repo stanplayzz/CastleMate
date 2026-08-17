@@ -34,6 +34,9 @@ void App::run() {
 		auto& renderer = m_context->begin_render(m_state_manager.get_clear_color());
 		renderer.viewport = viewport_v;
 
+		auto text = le::drawable::Text{};
+		text.draw(renderer);
+
 		m_state_manager.draw(renderer);
 
 		m_context->present();

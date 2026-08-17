@@ -1,6 +1,7 @@
 #include "castlemate/core/board.hpp"
 #include "castlemate/app.hpp"
 #include "castlemate/core/movegen.hpp"
+#include "castlemate/utils/algebraic.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include "castlemate/utils/constants.hpp"
 
@@ -22,7 +23,10 @@ void Board::click_square(std::uint8_t sq, SquareOutline& outline, bool white_bot
 
 	auto display_sq = white_bottom ? sq : 63 - sq;
 
+	std::println("display sq = {}", display_sq);
+
 	if (m_selected_sq.has_value()) {
+		std::println("test1");
 		move({.from = *m_selected_sq, .to = sq});
 		m_selected_sq = std::nullopt;
 	} else if (get_bit(m_position.occ, sq)) {
@@ -53,30 +57,37 @@ void Board::update_occ() {
 
 void Board::move(Move m) {
 	auto moves = legal_moves(m_position);
-	if (std::ranges::find(moves, m) == moves.end()) { return; }
 
-	// promotion
-	auto is_white = get_bit(m_position.bb[WP], m.from);
-	auto is_black = get_bit(m_position.bb[BP], m.from);
-	if ((is_white && m.to >= 56) || (is_black && m.to < 8)) {
+	auto const is_white = get_bit(m_position.bb[WP], m.from);
+	auto const is_black = get_bit(m_position.bb[BP], m.from);
+	auto const is_promotion = (is_white && m.to >= 56) || (is_black && m.to < 8);
+
+	if (is_promotion) {
+		// reduce matches to only .from and .to so UI clicks work
+		auto matches = [&](Move const& legal) {
+			return legal.from == m.from && legal.to == m.to;
+		};
+		if (std::ranges::find_if(moves, matches) == moves.end()) { return; }
+
 		m_pending_move = m;
 		m_should_promote = true;
 		return;
 	}
 
+	if (std::ranges::find(moves, m) == moves.end()) { return; }
+
 	finish_move(m);
 }
 
 void Board::finish_move(Move m) {
-	auto move_old = m;
-	auto pos_old = m_position;
+	auto white = m_position.turn == Color::White;
+	auto algebraic = to_algebraic(m, m_position);
 
 	auto capture = make_move(m_position, m).captured;
-	m_white_turn = !m_white_turn;
 	m_update_view = true;
 
 	if (in_checkmate(m_position)) {
-		m_ending.white_won = !m_white_turn;
+		m_ending.white_won = m_position.turn != Color::White;
 		m_has_ended = true;
 	}
 	if (in_stalemate(m_position)) {
@@ -91,6 +102,6 @@ void Board::finish_move(Move m) {
 		if (m_on_capture && capture != COUNT_) { m_on_capture(*capture); }
 	}
 
-	if (m_on_move) { m_on_move(move_old, pos_old, !m_white_turn); }
+	if (m_on_move) { m_on_move(m, m_position, algebraic, white); }
 }
 } // namespace CastleMate

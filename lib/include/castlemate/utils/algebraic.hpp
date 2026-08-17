@@ -123,4 +123,53 @@ inline auto to_algebraic(Move m, Position& pos) -> std::string {
 
 	return ret;
 }
+
+// UCI long algebraic notation
+inline auto to_uci(Move m) -> std::string {
+	auto file_char = [](int sq) {
+		return static_cast<char>('a' + (sq % 8));
+	};
+	auto rank_char = [](int sq) {
+		return static_cast<char>('1' + (sq / 8));
+	};
+
+	std::string ret;
+	ret += file_char(m.from);
+	ret += rank_char(m.from);
+	ret += file_char(m.to);
+	ret += rank_char(m.to);
+
+	if (m.promotion != COUNT_) { ret += static_cast<char>(std::tolower(promo_char.at(m.promotion))); }
+	return ret;
+}
+
+inline auto from_uci(std::string const& uci, Position& pos) -> std::optional<Move> {
+	if (uci.size() < 4) { return std::nullopt; }
+
+	auto sq = [](char file, char rank) -> std::uint8_t {
+		return static_cast<std::uint8_t>(((rank - '1') * 8) + (file - 'a'));
+	};
+
+	auto from = sq(uci[0], uci[1]);
+	auto to = sq(uci[2], uci[3]);
+
+	Piece promo = COUNT_;
+	if (uci.size() == 5) {
+		char p = static_cast<char>(std::toupper(uci[4]));
+		bool const white = pos.turn == Color::White;
+		switch (p) {
+		case 'Q': promo = white ? WQ : BQ; break;
+		case 'R': promo = white ? WR : BR; break;
+		case 'B': promo = white ? WB : BB; break;
+		case 'N': promo = white ? WN : BN; break;
+		default: return std::nullopt;
+		}
+	}
+
+	for (auto const& m : legal_moves(pos)) {
+		if (m.from == from && m.to == to && m.promotion == promo) { return m; }
+	}
+
+	return std::nullopt; // illegal or malformed
+}
 } // namespace CastleMate

@@ -7,6 +7,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     le2d
     bnet
     castlemate-shared
+    reproc++
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

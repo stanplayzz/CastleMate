@@ -81,4 +81,71 @@ auto Position::from_fen(std::string_view fen) -> Position {
 
 	return pos;
 }
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+auto Position::to_fen() const -> std::string {
+	auto fen = std::string{};
+
+	constexpr auto piece_chars_v = std::array{
+		'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k',
+	};
+
+	for (auto rank = 7; rank >= 0; --rank) {
+		auto empty = 0;
+		for (auto file = 0; file < 8; ++file) {
+			auto const sq = (rank * 8) + file;
+			auto piece = Piece::COUNT_;
+
+			for (auto i = 0; i < static_cast<int>(Piece::COUNT_); ++i) {
+				auto const p = static_cast<Piece>(i);
+				if (get_bit(bb[p], sq)) { // NOLINT
+					piece = p;
+					break;
+				}
+			}
+
+			if (piece == Piece::COUNT_) {
+				++empty;
+				continue;
+			}
+
+			if (empty > 0) {
+				fen += std::to_string(empty);
+				empty = 0;
+			}
+
+			fen += piece_chars_v.at(piece);
+		}
+
+		if (empty > 0) { fen += std::to_string(empty); }
+		if (rank > 0) { fen += '/'; }
+	}
+
+	fen += turn == Color::White ? " w " : " b ";
+
+	if (!castle_wk && !castle_wq && !castle_bk && !castle_bq) {
+		fen += '-';
+	} else {
+		if (castle_wk) { fen += 'K'; }
+		if (castle_wq) { fen += 'Q'; }
+		if (castle_bk) { fen += 'k'; }
+		if (castle_bq) { fen += 'q'; }
+	}
+
+	fen += ' ';
+
+	if (en_passant == -1) {
+		fen += '-';
+	} else {
+		auto const file = en_passant % 8;
+		auto const rank = en_passant / 8;
+
+		fen += static_cast<char>('a' + file);
+		fen += static_cast<char>('1' + rank);
+	}
+
+	fen += " 0 1";
+
+	return fen;
+}
 } // namespace CastleMate
