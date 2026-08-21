@@ -23,10 +23,7 @@ void Board::click_square(std::uint8_t sq, SquareOutline& outline, bool white_bot
 
 	auto display_sq = white_bottom ? sq : 63 - sq;
 
-	std::println("display sq = {}", display_sq);
-
 	if (m_selected_sq.has_value()) {
-		std::println("test1");
 		move({.from = *m_selected_sq, .to = sq});
 		m_selected_sq = std::nullopt;
 	} else if (get_bit(m_position.occ, sq)) {

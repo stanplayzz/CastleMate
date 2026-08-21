@@ -15,7 +15,7 @@ auto rng() -> std::mt19937& {
 	return rng;
 }
 
-constexpr auto cmd_uci() {
+auto cmd_uci() {
 	std::println("id name CastleMateEngine");
 	std::println("id author StanPlayzz");
 	std::println("uciok");
@@ -50,7 +50,7 @@ auto parse_position(std::istringstream& stream) {
 	return pos;
 }
 
-constexpr auto cmd_go(Position& pos) {
+auto cmd_go(Position& pos) {
 	auto moves = legal_moves(pos);
 	if (moves.empty()) {
 		std::println("bestmove 0000");

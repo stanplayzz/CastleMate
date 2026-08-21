@@ -25,13 +25,13 @@ class UciEngine : public klib::MoveOnly { // NOLINT
 	void reader_loop(std::stop_token const& token);
 	void handle_line(std::string const& line);
 
-	reproc::process m_process{};
-	std::jthread m_reader_thread{};
-
 	std::mutex m_position_mutex{};
 	Position m_position{};
 
 	std::function<void(Move)> m_on_best_move{};
 	std::function<void(std::string)> m_on_info{};
+
+	reproc::process m_process{};
+	std::jthread m_reader_thread{};
 };
 } // namespace CastleMate

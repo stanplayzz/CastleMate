@@ -1,7 +1,7 @@
 #pragma once
 #include "castlemate/core/board.hpp"
-#include "castlemate/core/move_source.hpp"
 #include "castlemate/engine/uci_engine.hpp"
+#include "castlemate/network/game_connection.hpp"
 #include "castlemate/state.hpp"
 #include "castlemate/ui/board_view.hpp"
 #include "castlemate/ui/side_menu.hpp"
@@ -28,7 +28,6 @@ class Gameplay : public State {
 	std::unique_ptr<le::IFont> m_font{};
 
 	std::unique_ptr<GameConnection> m_connection{};
-	std::unique_ptr<MoveSource> m_move_source{};
 
 	std::unique_ptr<Board> m_board{};
 	std::unique_ptr<BoardView> m_board_view{};

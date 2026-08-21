@@ -1,6 +1,5 @@
 #include "castlemate/engine/uci_engine.hpp"
 #include "castlemate/utils/algebraic.hpp"
-#include <print>
 
 namespace CastleMate {
 UciEngine::UciEngine(std::filesystem::path const& engine_binary) {
@@ -17,8 +16,6 @@ UciEngine::UciEngine(std::filesystem::path const& engine_binary) {
 
 UciEngine::~UciEngine() {
 	send("quit");
-	m_reader_thread.request_stop();
-	m_reader_thread.join();
 	m_process.wait(reproc::milliseconds(1000));
 }
 
