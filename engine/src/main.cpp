@@ -4,7 +4,7 @@
 
 auto main() -> int {
 	try {
-		CastleMate::engine::Engine{};
+		CastleMate::engine::Engine{}.run();
 	} catch (std::exception const& e) {
 		std::println("PANIC: {}", e.what());
 		return EXIT_FAILURE;

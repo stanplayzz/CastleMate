@@ -1,7 +1,6 @@
 #include "engine/engine.hpp"
 #include "castlemate/core/movegen.hpp"
 #include "castlemate/utils/algebraic.hpp"
-#include <iostream>
 #include <print>
 #include <sstream>
 #include <string>
@@ -15,10 +14,10 @@ auto rng() -> std::mt19937& {
 	return rng;
 }
 
-auto cmd_uci() {
-	std::println("id name CastleMateEngine");
-	std::println("id author StanPlayzz");
-	std::println("uciok");
+auto cmd_uci(std::ostream& out) {
+	std::println(out, "id name CastleMateEngine");
+	std::println(out, "id author StanPlayzz");
+	std::println(out, "uciok");
 }
 
 auto parse_position(std::istringstream& stream) {
@@ -50,42 +49,45 @@ auto parse_position(std::istringstream& stream) {
 	return pos;
 }
 
-auto cmd_go(Position& pos) {
+auto cmd_go(std::ostream& out, Position& pos) {
 	auto moves = legal_moves(pos);
 	if (moves.empty()) {
-		std::println("bestmove 0000");
+		std::println(out, "bestmove 0000");
 		return;
 	}
 
 	auto& move = moves.at(rng()() % moves.size());
 
-	std::println("bestmove {}", to_uci(move));
+	std::println(out, "bestmove {}", to_uci(move));
 }
 } // namespace
 
-Engine::Engine() {
+void Engine::run() {
 	auto line = std::string{};
-	while (std::getline(std::cin, line)) {
-		auto stream = std::istringstream{line};
-		auto cmd = std::string{};
-		stream >> cmd;
-
-		if (cmd == "uci") {
-			cmd_uci();
-		} else if (cmd == "isready") {
-			std::println("readyok");
-		} else if (cmd == "ucinewgame") {
-			new_game();
-		} else if (cmd == "position") {
-			m_position = parse_position(stream);
-		} else if (cmd == "go") {
-			cmd_go(m_position);
-		} else if (cmd == "quit") {
-			break;
-		}
-
-		std::cout.flush();
+	while (std::getline(m_in, line)) {
+		if (line == "quit") { break; }
+		handle_command(line);
 	}
+}
+
+void Engine::handle_command(std::string const& line) {
+	auto stream = std::istringstream{line};
+	auto cmd = std::string{};
+	stream >> cmd;
+
+	if (cmd == "uci") {
+		cmd_uci(m_out);
+	} else if (cmd == "isready") {
+		std::println(m_out, "readyok");
+	} else if (cmd == "ucinewgame") {
+		new_game();
+	} else if (cmd == "position") {
+		m_position = parse_position(stream);
+	} else if (cmd == "go") {
+		cmd_go(m_out, m_position);
+	}
+
+	m_out.flush();
 }
 
 void Engine::new_game() { m_position = Position::from_fen(start_fen); }

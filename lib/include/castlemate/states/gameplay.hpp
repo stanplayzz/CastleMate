@@ -1,6 +1,6 @@
 #pragma once
 #include "castlemate/core/board.hpp"
-#include "castlemate/engine/uci_engine.hpp"
+#include "castlemate/engine/engine.hpp"
 #include "castlemate/network/game_connection.hpp"
 #include "castlemate/state.hpp"
 #include "castlemate/ui/board_view.hpp"
@@ -36,7 +36,7 @@ class Gameplay : public State {
 	std::unique_ptr<ui::ConfirmDialog> m_confirm_dialog{};
 	PendingConfirm m_pending_confirm{};
 
-	std::unique_ptr<UciEngine> m_engine{};
+	IEngine* m_engine;
 
 	bool m_white_bottom{};
 

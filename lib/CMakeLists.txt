@@ -8,6 +8,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     bnet
     castlemate-shared
     reproc++
+    castlemate-engine-core
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

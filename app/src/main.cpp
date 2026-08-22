@@ -33,13 +33,23 @@ constexpr auto debug_options(int argc, char* argv[]) { // NOLINT
 		CastleMate::engine::perft_divide(pos, depth);
 	}
 }
+
+auto parse_engine_arg(int argc, char* argv[]) -> std::optional<std::string> { // NOLINT
+	constexpr auto engine_prefix_v = std::string_view{"--engine="};
+
+	for (int i = 1; i < argc; ++i) {
+		auto const arg = std::string_view{argv[i]}; // NOLINT
+		if (arg.starts_with(engine_prefix_v)) { return std::string{arg.substr(engine_prefix_v.size())}; }
+	}
+	return std::nullopt;
+}
 } // namespace
 
 auto main(int argc, char* argv[]) -> int {
 	debug_options(argc, argv);
 
 	try {
-		CastleMate::App{}.run();
+		CastleMate::App{parse_engine_arg(argc, argv)}.run();
 	} catch (std::exception const& e) {
 		std::println("PANIC: {}", e.what());
 		return EXIT_FAILURE;

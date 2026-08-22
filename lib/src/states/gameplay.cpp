@@ -3,14 +3,17 @@
 #include "castlemate/states/menu.hpp"
 #include "castlemate/utils/conversion.hpp"
 
+using namespace std::chrono_literals;
+
 namespace CastleMate {
 Gameplay::Gameplay(gsl::not_null<App*> app, bool white)
 	: m_app(app), m_white_bottom(white), m_color(white ? Color::White : Color::Black) {
 	if (m_app->network().matched_game()) {
 		m_connection = std::make_unique<GameConnection>(m_app->network().get_connection());
 	} else {
-		m_engine =
-			std::make_unique<UciEngine>("/home/stan/projects/castlemate/out/clang/engine/Debug/castlemate-engine");
+		m_engine = m_app->engine().get();
+
+		m_engine->new_game();
 
 		m_engine->on_best_move([this](Move m) {
 			m_board->move(m);
@@ -32,7 +35,7 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white)
 
 		if (m_engine && !is_turn()) {
 			m_engine->set_position(pos);
-			m_engine->go();
+			m_engine->go({.movetime = 5000ms});
 		}
 	});
 	m_board->set_on_capture([this](Piece p) {

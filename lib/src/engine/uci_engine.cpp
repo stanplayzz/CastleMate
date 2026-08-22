@@ -30,7 +30,12 @@ void UciEngine::set_position(Position const& position) {
 	send(cmd);
 }
 
-void UciEngine::go() { send("go"); }
+void UciEngine::go(engine::SearchParams params) {
+	auto cmd = std::string{"go"};
+	if (params.movetime) { cmd += " movetime " + std::to_string(params.movetime->count()); }
+	if (params.depth) { cmd += " depth " + std::to_string(*params.depth); }
+	send(cmd);
+}
 
 void UciEngine::stop() { send("stop"); }
 
