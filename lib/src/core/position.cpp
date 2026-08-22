@@ -1,5 +1,6 @@
 #include "castlemate/core/position.hpp"
 #include "castlemate/utils/bit_math.hpp"
+#include <array>
 #include <sstream>
 
 namespace CastleMate {
