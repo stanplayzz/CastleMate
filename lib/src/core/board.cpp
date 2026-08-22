@@ -18,23 +18,32 @@ Board::Board(gsl::not_null<App*> app) : m_app(app) {
 	if (!m_move_buffer || !m_capture_buffer) { throw std::runtime_error{"Failed to load audio buffer"}; }
 }
 
-void Board::click_square(std::uint8_t sq, SquareOutline& outline, bool white_bottom) {
+void Board::click_square(std::uint8_t sq, SquareOutline& outline, bool white_bottom, Color player) {
 	if (m_pending_move) { return; }
 
-	auto display_sq = white_bottom ? sq : 63 - sq;
+	auto own_piece = [&](std::uint8_t s) {
+		return (get_bit(m_position.white_occ, s) && player == Color::White) ||
+			   (get_bit(m_position.black_occ, s) && player == Color::Black);
+	};
 
-	if (m_selected_sq.has_value()) {
-		move({.from = *m_selected_sq, .to = sq});
-		m_selected_sq = std::nullopt;
-	} else if (get_bit(m_position.occ, sq)) {
-		if ((get_bit(m_position.white_occ, sq) && m_position.turn == Color::Black) ||
-			(get_bit(m_position.black_occ, sq) && m_position.turn == Color::White)) {
-			return;
-		}
-		m_selected_sq = sq;
+	auto select = [&](std::uint8_t s) {
+		m_selected_sq = s;
+		auto display_sq = white_bottom ? s : 63 - s;
 		auto pos = glm::ivec2{display_sq % 8, display_sq / 8};
 		outline.set_position((glm::vec2{pos - glm::ivec2{4, 4}} * tile_size_v) + (tile_size_v * 0.5f));
+	};
+
+	if (m_selected_sq.has_value()) {
+		if (own_piece(sq)) {
+			select(sq);
+		} else {
+			if (player == m_position.turn) { move({.from = *m_selected_sq, .to = sq}); }
+			m_selected_sq = std::nullopt;
+		}
+	} else if (get_bit(m_position.occ, sq) && own_piece(sq)) {
+		select(sq);
 	}
+
 	outline.should_draw = m_selected_sq.has_value();
 }
 

@@ -18,7 +18,6 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white)
 		m_engine->on_best_move([this](Move m) {
 			m_board->move(m);
 		});
-		m_engine->new_game();
 	}
 
 	m_font = app->create_asset_loader().load<le::IFont>("fonts/CormorantGaramond.ttf");
@@ -35,7 +34,7 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white)
 
 		if (m_engine && !is_turn()) {
 			m_engine->set_position(pos);
-			m_engine->go({.movetime = 5000ms});
+			m_engine->go({.movetime = 2000ms});
 		}
 	});
 	m_board->set_on_capture([this](Piece p) {
@@ -45,6 +44,11 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white)
 	m_board_view->update_board(static_cast<std::uint64_t const*>(m_board->get_bitboard()), m_white_bottom);
 
 	m_confirm_dialog = std::make_unique<ui::ConfirmDialog>(m_app, *m_font);
+
+	if (m_engine && !white) {
+		m_engine->set_position(m_board->get_position());
+		m_engine->go({.movetime = 2000ms});
+	}
 }
 
 auto Gameplay::update() -> std::unique_ptr<State> {
@@ -128,20 +132,20 @@ void Gameplay::handle_input() {
 						m_pending_confirm = PendingConfirm::None;
 						m_confirm_dialog->close();
 					}
-				} else if (is_turn()) {
+				} else {
 					auto pos = screen_to_sq(window_to_board(m_mouse_pos, m_app->get_context().window_size()));
 					auto sq = pos.x + (pos.y * 8);
 					if (sq >= 0 && sq < 64) {
 						sq = m_white_bottom ? sq : 63 - sq;
 						m_board->click_square(static_cast<std::uint8_t>(sq), m_board_view->get_square_outline(),
-											  m_white_bottom);
+											  m_white_bottom, m_color);
 					}
 				}
 			}
 		}
 		if (m_board->get_ending()) {
 			if (auto const* key = std::get_if<le::event::Key>(&e)) {
-				if (key->action == GLFW_RELEASE) {
+				if (key->action == GLFW_RELEASE && key->key == GLFW_KEY_ESCAPE) {
 					m_go_main_menu = true;
 					if (m_engine) { m_engine->stop(); }
 				}

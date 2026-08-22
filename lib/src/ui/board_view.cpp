@@ -89,7 +89,7 @@ void BoardView::end_game(GameEnding ending) {
 
 	m_end_text.set_string(*m_font, string, {.height = le::TextHeight{140}});
 	m_end_text.tint = Theme::from_name<kvf::Color>({"end_text"});
-	m_end_sub_text.set_string(*m_font, "PRESS ANY BUTTON TO RETURN", {.height = le::TextHeight{60}});
+	m_end_sub_text.set_string(*m_font, "PRESS ESCAPE TO RETURN", {.height = le::TextHeight{60}});
 	m_end_sub_text.tint = Theme::from_name<kvf::Color>({"end_text"});
 	m_end_sub_text.transform.position.y = -50;
 }

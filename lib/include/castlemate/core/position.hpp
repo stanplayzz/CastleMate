@@ -1,6 +1,7 @@
 #pragma once
 #include "castlemate/core/color.hpp"
 #include "castlemate/core/piece.hpp"
+#include <string>
 #include <string_view>
 
 namespace CastleMate {
