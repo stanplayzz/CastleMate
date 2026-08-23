@@ -1,6 +1,6 @@
 #pragma once
 #include "castlemate/core/move.hpp"
-#include "engine/evalutation.hpp"
+#include "engine/evaluation/evaluation.hpp"
 
 namespace CastleMate::engine {
 namespace {

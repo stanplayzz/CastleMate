@@ -1,6 +1,5 @@
 #pragma once
 #include "castlemate/core/movegen.hpp"
-#include "engine/evalutation.hpp"
 #include "engine/move_score.hpp"
 #include "engine/search_context.hpp"
 #include <algorithm>
