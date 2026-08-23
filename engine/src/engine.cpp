@@ -1,7 +1,7 @@
 #include "engine/engine.hpp"
-#include "castlemate/core/movegen.hpp"
 #include "castlemate/utils/algebraic.hpp"
-#include "engine/negamax.hpp"
+#include "engine/best_move.hpp"
+#include "engine/movetime.hpp"
 #include <print>
 #include <sstream>
 #include <string>
@@ -45,7 +45,44 @@ auto parse_position(std::istringstream& stream) {
 	return pos;
 }
 
-auto cmd_go(std::ostream& out, Position& pos) {
+auto parse_go_movetime(std::istringstream& stream, Position const& pos) -> std::chrono::milliseconds {
+	auto movetime = std::optional<std::chrono::milliseconds>{};
+	auto wtime = std::optional<int>{};
+	auto btime = std::optional<int>{};
+	auto winc = 0;
+	auto binc = 0;
+
+	auto token = std::string{};
+	while (stream >> token) {
+		auto next_int = [&]() -> int {
+			auto s = std::string{};
+			stream >> s;
+			return std::stoi(s);
+		};
+
+		if (token == "movetime") {
+			movetime = std::chrono::milliseconds{next_int()};
+		} else if (token == "wtime") {
+			wtime = next_int();
+		} else if (token == "btime") {
+			btime = next_int();
+		} else if (token == "winc") {
+			winc = next_int();
+		} else if (token == "binc") {
+			binc = next_int();
+		}
+	}
+
+	if (movetime) { return *movetime; }
+
+	auto const is_white = pos.turn == Color::White;
+	auto const remaining = is_white ? wtime : btime;
+	auto const inc = is_white ? winc : binc;
+
+	return remaining ? compute_movetime(*remaining, inc) : std::chrono::milliseconds{1000};
+}
+
+auto cmd_go(std::ostream& out, Position& pos, std::chrono::milliseconds movetime) {
 	auto moves = legal_moves(pos);
 
 	if (moves.empty()) {
@@ -53,7 +90,7 @@ auto cmd_go(std::ostream& out, Position& pos) {
 		return;
 	}
 
-	auto move = negamax(pos, 6, -infinity_v, infinity_v).move;
+	auto move = find_best_move(pos, movetime);
 	std::println(out, "bestmove {}", to_uci(move));
 }
 } // namespace
@@ -80,7 +117,7 @@ void Engine::handle_command(std::string const& line) {
 	} else if (cmd == "position") {
 		m_position = parse_position(stream);
 	} else if (cmd == "go") {
-		cmd_go(m_out, m_position);
+		cmd_go(m_out, m_position, parse_go_movetime(stream, m_position));
 	}
 
 	m_out.flush();

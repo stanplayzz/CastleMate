@@ -1,6 +1,6 @@
 #pragma once
 #include "castlemate/core/move.hpp"
-#include "engine/search_params.hpp"
+#include "castlemate/engine/search_params.hpp"
 #include <klib/base_types.hpp>
 #include <functional>
 

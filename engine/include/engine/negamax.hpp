@@ -1,8 +1,5 @@
 #pragma once
-#include "castlemate/core/movegen.hpp"
-#include "engine/evalutation.hpp"
-#include "engine/move_score.hpp"
-#include <algorithm>
+#include "engine/quiescence.hpp"
 
 namespace CastleMate::engine {
 constexpr auto infinity_v = 1'000'000;
@@ -12,11 +9,10 @@ struct NegamaxResult {
 	Move move{};
 };
 
-inline auto negamax(Position& pos, int depth, int alpha, int beta) -> NegamaxResult {
-	if (depth == 0) {
-		auto eval = tapered_eval(pos);
-		return {.eval = pos.turn == Color::White ? eval : -eval};
-	}
+inline auto negamax(Position& pos, int depth, int alpha, int beta, SearchContext& ctx) -> NegamaxResult {
+	if (ctx.check_time()) { return {}; }
+
+	if (depth == 0) { return {.eval = quiescence(pos, alpha, beta, ctx)}; }
 
 	auto legal = legal_moves(pos);
 	if (legal.empty()) {
@@ -31,10 +27,10 @@ inline auto negamax(Position& pos, int depth, int alpha, int beta) -> NegamaxRes
 	auto best = NegamaxResult{.eval = -infinity_v, .move = legal.front()};
 	for (auto move : legal) {
 		auto undo = make_move(pos, move);
-
-		auto eval = -negamax(pos, depth - 1, -beta, -alpha).eval;
-
+		auto eval = -negamax(pos, depth - 1, -beta, -alpha, ctx).eval;
 		unmake_move(pos, undo);
+
+		if (ctx.timed_out) { break; }
 
 		if (eval > best.eval) { best = {.eval = eval, .move = move}; }
 
