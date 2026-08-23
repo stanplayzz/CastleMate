@@ -1,6 +1,7 @@
 #include "engine/engine.hpp"
 #include "castlemate/core/movegen.hpp"
 #include "castlemate/utils/algebraic.hpp"
+#include "engine/negamax.hpp"
 #include <print>
 #include <sstream>
 #include <string>
@@ -8,11 +9,6 @@
 namespace CastleMate::engine {
 namespace {
 constexpr auto start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-auto rng() -> std::mt19937& {
-	static std::mt19937 rng{std::random_device{}()};
-	return rng;
-}
 
 auto cmd_uci(std::ostream& out) {
 	std::println(out, "id name CastleMateEngine");
@@ -51,13 +47,13 @@ auto parse_position(std::istringstream& stream) {
 
 auto cmd_go(std::ostream& out, Position& pos) {
 	auto moves = legal_moves(pos);
+
 	if (moves.empty()) {
-		std::println(out, "bestmove 0000");
+		std::println(out, "{}", "bestmove 0000");
 		return;
 	}
 
-	auto& move = moves.at(rng()() % moves.size());
-
+	auto move = negamax(pos, 6, -infinity_v, infinity_v).move;
 	std::println(out, "bestmove {}", to_uci(move));
 }
 } // namespace
