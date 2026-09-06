@@ -82,7 +82,7 @@ auto parse_go_movetime(std::istringstream& stream, Position const& pos) -> std::
 	return remaining ? compute_movetime(*remaining, inc) : std::chrono::milliseconds{1000};
 }
 
-auto cmd_go(std::ostream& out, Position& pos, std::chrono::milliseconds movetime) {
+auto cmd_go(std::ostream& out, Position& pos, std::chrono::milliseconds movetime, SearchContext& context) {
 	auto moves = legal_moves(pos);
 
 	if (moves.empty()) {
@@ -90,7 +90,7 @@ auto cmd_go(std::ostream& out, Position& pos, std::chrono::milliseconds movetime
 		return;
 	}
 
-	auto move = find_best_move(pos, movetime);
+	auto move = find_best_move(pos, movetime, context);
 	std::println(out, "bestmove {}", to_uci(move));
 }
 } // namespace
@@ -117,11 +117,14 @@ void Engine::handle_command(std::string const& line) {
 	} else if (cmd == "position") {
 		m_position = parse_position(stream);
 	} else if (cmd == "go") {
-		cmd_go(m_out, m_position, parse_go_movetime(stream, m_position));
+		cmd_go(m_out, m_position, parse_go_movetime(stream, m_position), m_context);
 	}
 
 	m_out.flush();
 }
 
-void Engine::new_game() { m_position = Position::from_fen(start_fen); }
+void Engine::new_game() {
+	m_position = Position::from_fen(start_fen);
+	m_context.tt.clear();
+}
 } // namespace CastleMate::engine

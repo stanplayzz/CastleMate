@@ -7,7 +7,7 @@
 
 namespace CastleMate {
 namespace {
-constexpr auto base_fen_v = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+constexpr auto base_fen_v = "8/8/8/2N5/8/2k1N3/Q3r2q/K7 w - - 0 1";
 }
 
 Board::Board(gsl::not_null<App*> app) : m_app(app) {
@@ -89,7 +89,8 @@ void Board::finish_move(Move m) {
 	auto white = m_position.turn == Color::White;
 	auto algebraic = to_algebraic(m, m_position);
 
-	auto capture = make_move(m_position, m).captured;
+	make_move(m_position, m);
+	auto capture = m_position.state->captured;
 	m_update_view = true;
 
 	if (in_checkmate(m_position)) {
@@ -101,13 +102,18 @@ void Board::finish_move(Move m) {
 		m_has_ended = true;
 	}
 
-	if (!capture) {
+	if (capture == COUNT_) {
 		m_app->get_context().get_audio_mixer().play_sfx(m_move_buffer.get());
 	} else {
 		m_app->get_context().get_audio_mixer().play_sfx(m_capture_buffer.get());
-		if (m_on_capture && capture != COUNT_) { m_on_capture(*capture); }
+		if (m_on_capture && capture != COUNT_) { m_on_capture(capture); }
 	}
 
-	if (m_on_move) { m_on_move(m, m_position, algebraic, white); }
+	if (m_on_move) {
+		std::println("call callback");
+		m_on_move(m, m_position, algebraic, white);
+	} else {
+		std::println("no callback");
+	}
 }
 } // namespace CastleMate

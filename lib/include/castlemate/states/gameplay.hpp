@@ -36,7 +36,7 @@ class Gameplay : public State {
 	std::unique_ptr<ui::ConfirmDialog> m_confirm_dialog{};
 	PendingConfirm m_pending_confirm{};
 
-	IEngine* m_engine;
+	IEngine* m_engine{};
 
 	bool m_white_bottom{};
 

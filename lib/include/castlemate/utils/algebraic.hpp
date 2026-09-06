@@ -69,13 +69,13 @@ inline auto to_algebraic(Move m, Position& pos) -> std::string {
 		}
 
 		if (!castle_str.empty()) {
-			auto undo = make_move(pos, m);
+			make_move(pos, m);
 			if (in_checkmate(pos)) {
 				castle_str += '#';
 			} else if (in_check(pos, pos.turn == Color::White)) {
 				castle_str += '+';
 			}
-			unmake_move(pos, undo);
+			unmake_move(pos, m);
 			return castle_str;
 		}
 	}
@@ -111,7 +111,7 @@ inline auto to_algebraic(Move m, Position& pos) -> std::string {
 		ret += promo_char.at(m.promotion);
 	}
 
-	auto undo = make_move(pos, m);
+	make_move(pos, m);
 
 	if (in_checkmate(pos)) {
 		ret += '#';
@@ -119,7 +119,7 @@ inline auto to_algebraic(Move m, Position& pos) -> std::string {
 		ret += '+';
 	}
 
-	unmake_move(pos, undo);
+	unmake_move(pos, m);
 
 	return ret;
 }

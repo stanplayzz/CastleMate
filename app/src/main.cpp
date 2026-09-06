@@ -27,10 +27,12 @@ constexpr auto debug_options(int argc, char* argv[]) { // NOLINT
 
 		auto pos = CastleMate::Position::from_fen(fen);
 
-		for (auto d = 1; d <= depth; d++) { std::println("Depth {} = {} Nodes", d, CastleMate::engine::perft(pos, d)); }
+		auto const start = std::chrono::steady_clock::now();
+		auto const nodes = CastleMate::engine::perft(pos, depth);
+		auto const elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 
-		std::println("");
-		CastleMate::engine::perft_divide(pos, depth);
+		std::println("Nodes: {}\nTime: {:.6f}s\nNPS: {:.2f} MNPS", nodes, elapsed,
+					 static_cast<double>(nodes) / elapsed / 1'000'000.0);
 	}
 }
 

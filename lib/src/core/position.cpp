@@ -1,5 +1,6 @@
 #include "castlemate/core/position.hpp"
 #include "castlemate/utils/bit_math.hpp"
+#include "engine/zobrist.hpp"
 #include <array>
 #include <sstream>
 
@@ -33,7 +34,8 @@ auto Position::from_fen(std::string_view fen) -> Position {
 	auto turn = std::string{};
 	auto castling = std::string{};
 	auto en_passant = std::string{};
-	stream >> board >> turn >> castling >> en_passant;
+	auto halfmove = std::string{};
+	stream >> board >> turn >> castling >> en_passant >> halfmove;
 
 	auto rank = 7;
 	auto file = 0;
@@ -79,6 +81,10 @@ auto Position::from_fen(std::string_view fen) -> Position {
 	pos.white_occ = pos.bb[WP] | pos.bb[WR] | pos.bb[WN] | pos.bb[WB] | pos.bb[WQ] | pos.bb[WK];
 	pos.black_occ = pos.bb[BP] | pos.bb[BR] | pos.bb[BN] | pos.bb[BB] | pos.bb[BQ] | pos.bb[BK];
 	pos.occ = pos.white_occ | pos.black_occ;
+
+	pos.halfmove_clock = halfmove.empty() ? 0 : std::stoi(halfmove);
+
+	pos.hash = engine::compute_hash(pos);
 
 	return pos;
 }
@@ -145,7 +151,7 @@ auto Position::to_fen() const -> std::string {
 		fen += static_cast<char>('1' + rank);
 	}
 
-	fen += " 0 1";
+	fen += " " + std::to_string(halfmove_clock) + " 1";
 
 	return fen;
 }

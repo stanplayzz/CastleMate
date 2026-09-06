@@ -26,11 +26,18 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white)
 	m_side_menu = std::make_unique<SideMenu>(app);
 	m_board = std::make_unique<Board>(app);
 	m_board->set_on_move([this](Move move, Position& pos, std::string const& algebraic, bool white) {
+		std::println("callback");
 		m_side_menu->append_move(algebraic, white);
+		std::println("callback");
 
 		// !is_turn() because the turn is already over
 		// when this callback is called
-		if (m_connection && !is_turn()) { m_connection->send_move(move); }
+		if (!m_connection) { std::println("no connection"); }
+		if (is_turn()) { std::println("not turn"); }
+		if (m_connection && !is_turn()) {
+			std::println("SENT");
+			m_connection->send_move(move);
+		}
 
 		if (m_engine && !is_turn()) {
 			m_engine->set_position(pos);
@@ -74,7 +81,7 @@ auto Gameplay::update() -> std::unique_ptr<State> {
 		auto conn_event = m_connection->poll_event();
 		if (!conn_event) { return nullptr; }
 
-		if (conn_event->kind != GameConnection::IncomingEvent::Kind::Move) { m_board->move(conn_event->move); }
+		if (conn_event->kind == GameConnection::IncomingEvent::Kind::Move) { m_board->move(conn_event->move); }
 		if (conn_event->kind == GameConnection::IncomingEvent::Kind::DrawOffer) {
 			m_pending_confirm = PendingConfirm::DrawAccept;
 			m_confirm_dialog->open("Opponent requested a draw, accept?");
