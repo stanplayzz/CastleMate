@@ -1,5 +1,5 @@
 #include <castlemate/app.hpp>
-#include <castlemate/engine/perft.hpp>
+#include <castlemate/utils/perft.hpp>
 #include <print>
 
 namespace {
@@ -27,11 +27,23 @@ constexpr auto debug_options(int argc, char* argv[]) { // NOLINT
 
 		auto pos = CastleMate::Position::from_fen(fen);
 
-		for (auto d = 1; d <= depth; d++) { std::println("Depth {} = {} Nodes", d, CastleMate::engine::perft(pos, d)); }
+		auto const start = std::chrono::steady_clock::now();
+		auto const nodes = CastleMate::engine::perft(pos, depth);
+		auto const elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 
-		std::println("");
-		CastleMate::engine::perft_divide(pos, depth);
+		std::println("Nodes: {}\nTime: {:.6f}s\nNPS: {:.2f} MNPS", nodes, elapsed,
+					 static_cast<double>(nodes) / elapsed / 1'000'000.0);
 	}
+}
+
+auto parse_engine_arg(int argc, char* argv[]) -> std::optional<std::string> { // NOLINT
+	constexpr auto engine_prefix_v = std::string_view{"--engine="};
+
+	for (int i = 1; i < argc; ++i) {
+		auto const arg = std::string_view{argv[i]}; // NOLINT
+		if (arg.starts_with(engine_prefix_v)) { return std::string{arg.substr(engine_prefix_v.size())}; }
+	}
+	return std::nullopt;
 }
 } // namespace
 
@@ -39,7 +51,7 @@ auto main(int argc, char* argv[]) -> int {
 	debug_options(argc, argv);
 
 	try {
-		CastleMate::App{}.run();
+		CastleMate::App{parse_engine_arg(argc, argv)}.run();
 	} catch (std::exception const& e) {
 		std::println("PANIC: {}", e.what());
 		return EXIT_FAILURE;

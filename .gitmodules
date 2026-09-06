@@ -4,3 +4,6 @@
 [submodule "ext/bnet"]
 	path = ext/bnet
 	url = https://github.com/stanplayzz/bnet
+[submodule "ext/reproc"]
+	path = ext/reproc
+	url = https://github.com/daandemeyer/reproc

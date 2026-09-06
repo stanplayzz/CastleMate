@@ -11,6 +11,8 @@ class SideMenu {
   public:
 	SideMenu(gsl::not_null<App const*> app);
 
+	void update_move_list() { m_move_history->update_list(); }
+
 	void append_move(std::string const& notation, bool white);
 	void add_capture(Piece piece);
 

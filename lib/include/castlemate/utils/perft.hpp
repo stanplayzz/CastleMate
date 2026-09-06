@@ -10,9 +10,9 @@ constexpr auto perft(Position& pos, int depth) -> std::uint64_t {
 	auto nodes = std::uint64_t{};
 
 	for (auto move : legal_moves(pos)) {
-		auto undo = make_move(pos, move);
+		make_move(pos, move);
 		nodes += perft(pos, depth - 1);
-		unmake_move(pos, undo);
+		unmake_move(pos, move);
 	}
 
 	return nodes;
@@ -20,9 +20,9 @@ constexpr auto perft(Position& pos, int depth) -> std::uint64_t {
 
 inline auto perft_divide(Position& pos, int depth) {
 	for (auto move : legal_moves(pos)) {
-		auto undo = make_move(pos, move);
+		make_move(pos, move);
 		auto nodes = perft(pos, depth - 1);
-		unmake_move(pos, undo);
+		unmake_move(pos, move);
 
 		auto algebraic = to_algebraic(move, pos);
 		std::println("{}: {}", algebraic, nodes);

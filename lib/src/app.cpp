@@ -1,5 +1,7 @@
 #include "castlemate/app.hpp"
 #include "castlemate/build_version.hpp"
+#include "castlemate/engine/native_engine.hpp"
+#include "castlemate/engine/uci_engine.hpp"
 #include "castlemate/states/gameplay.hpp"
 #include "castlemate/states/menu.hpp"
 #include "castlemate/theme.hpp"
@@ -15,10 +17,16 @@ auto const context_create_info_v = le::Context::CreateInfo{
 } // namespace
 
 // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
-App::App() {
+App::App(std::optional<std::string> engine) {
 	m_context = le::Context::create(context_create_info_v);
 	create_data_loader();
 	Theme::initialize(*m_data_loader);
+
+	if (engine) {
+		m_engine = std::make_unique<UciEngine>(*engine);
+	} else {
+		m_engine = std::make_unique<NativeEngine>();
+	}
 }
 
 void App::run() {
@@ -33,6 +41,9 @@ void App::run() {
 
 		auto& renderer = m_context->begin_render(m_state_manager.get_clear_color());
 		renderer.viewport = viewport_v;
+
+		auto text = le::drawable::Text{};
+		text.draw(renderer);
 
 		m_state_manager.draw(renderer);
 

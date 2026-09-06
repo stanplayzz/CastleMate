@@ -52,7 +52,7 @@ inline auto king_move(int sq, std::uint64_t friendly) -> std::uint64_t {
 	return moves_v.at(static_cast<std::size_t>(sq)) & ~friendly;
 }
 
-inline auto pawn_move(int sq, Piece p, Position pos, std::uint64_t friendly) {
+inline auto pawn_move(int sq, Piece p, Position const& pos, std::uint64_t friendly) {
 	std::uint64_t b = 1ULL << sq;
 	std::uint64_t ep_bb = (pos.en_passant >= 0) ? (1ULL << pos.en_passant) : 0;
 
@@ -134,7 +134,7 @@ inline auto castle_moves(Position const& pos) -> std::uint64_t {
 	return ret;
 }
 
-inline auto get_moves(Position pos, int sq, std::uint64_t friendly) -> std::uint64_t {
+inline auto get_moves(Position const& pos, int sq, std::uint64_t friendly) -> std::uint64_t {
 	if (get_bit(pos.bb[WN], sq) || get_bit(pos.bb[BN], sq)) { return knight_move(sq, friendly); }
 	if (get_bit(pos.bb[WK], sq) || get_bit(pos.bb[BK], sq)) { return king_move(sq, friendly); }
 	if (get_bit(pos.bb[WP], sq)) { return pawn_move(sq, WP, pos, friendly); }
@@ -171,6 +171,19 @@ inline auto castle(Position& pos, Move m) {
 	}
 
 	update_castling_rights(pos, m);
+}
+
+inline void uncastle(Position& pos, Move m, Piece moved) {
+	if (moved != WK && moved != BK) { return; }
+	if (m.from == 4 && m.to == 6) {
+		replace_bit(pos.bb[WR], 5, 7);
+	} else if (m.from == 4 && m.to == 2) {
+		replace_bit(pos.bb[WR], 3, 0);
+	} else if (m.from == 60 && m.to == 62) {
+		replace_bit(pos.bb[BR], 61, 63);
+	} else if (m.from == 60 && m.to == 58) {
+		replace_bit(pos.bb[BR], 59, 56);
+	}
 }
 
 inline auto promote(Position& pos, Move m, bool white) {

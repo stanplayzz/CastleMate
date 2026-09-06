@@ -74,6 +74,12 @@ auto Menu::update() -> std::unique_ptr<State> {
 						m_choose_color_menu.selected.transform.position =
 							m_choose_color_menu.white_selected ? m_choose_color_menu.white.sprite.transform.position
 															   : m_choose_color_menu.black.sprite.transform.position;
+
+						m_choose_color_menu.white.sprite.transform.scale =
+							m_choose_color_menu.white_selected ? glm::vec2{1} : glm::vec2{0.75f};
+						m_choose_color_menu.black.sprite.transform.scale =
+							!m_choose_color_menu.white_selected ? glm::vec2{1} : glm::vec2{0.75f};
+
 						m_choose_color_menu.text.set_string(*m_font,
 															m_choose_color_menu.white_selected ? "WHITE" : "BLACK",
 															{.height = le::TextHeight{100}});
@@ -144,6 +150,8 @@ void Menu::create_choose_color_menu() {
 	menu.black.set_texture(*m_piece_texture, {.lt = {0, 1.f / 2.f}, .rb = {1.f / 6.f, 1.f}});
 	menu.white.set_position({-sprite_size * 0.5f, 256});
 	menu.black.set_position({sprite_size * 0.5f, 256});
+
+	menu.black.sprite.transform.scale = glm::vec2{0.75f};
 
 	menu.selected.create({sprite_size, sprite_size});
 	menu.selected.tint = kvf::Color{glm::vec4{0, 0, 0, 0.2f}};

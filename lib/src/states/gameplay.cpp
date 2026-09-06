@@ -1,16 +1,23 @@
 #include "castlemate/states/gameplay.hpp"
 #include "castlemate/app.hpp"
 #include "castlemate/states/menu.hpp"
-#include "castlemate/utils/algebraic.hpp"
 #include "castlemate/utils/conversion.hpp"
 
+using namespace std::chrono_literals;
+
 namespace CastleMate {
-Gameplay::Gameplay(gsl::not_null<App*> app, bool white) : m_app(app), m_white_bottom(white) {
+Gameplay::Gameplay(gsl::not_null<App*> app, bool white)
+	: m_app(app), m_white_bottom(white), m_color(white ? Color::White : Color::Black) {
 	if (m_app->network().matched_game()) {
 		m_connection = std::make_unique<GameConnection>(m_app->network().get_connection());
-		m_move_source = std::make_unique<OnlineMoveSource>(white);
 	} else {
-		m_move_source = std::make_unique<LocalMoveSource>();
+		m_engine = m_app->engine().get();
+
+		m_engine->new_game();
+
+		m_engine->on_best_move([this](Move m) {
+			m_board->move(m);
+		});
 	}
 
 	m_font = app->create_asset_loader().load<le::IFont>("fonts/CormorantGaramond.ttf");
@@ -18,9 +25,24 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white) : m_app(app), m_white_bo
 
 	m_side_menu = std::make_unique<SideMenu>(app);
 	m_board = std::make_unique<Board>(app);
-	m_board->set_on_move([this](Move move, Position& pos, bool white) {
-		m_side_menu->append_move(to_algebraic(move, pos), white);
-		if (white == m_white_bottom) { m_move_source->send_move(move, m_connection.get()); }
+	m_board->set_on_move([this](Move move, Position& pos, std::string const& algebraic, bool white) {
+		std::println("callback");
+		m_side_menu->append_move(algebraic, white);
+		std::println("callback");
+
+		// !is_turn() because the turn is already over
+		// when this callback is called
+		if (!m_connection) { std::println("no connection"); }
+		if (is_turn()) { std::println("not turn"); }
+		if (m_connection && !is_turn()) {
+			std::println("SENT");
+			m_connection->send_move(move);
+		}
+
+		if (m_engine && !is_turn()) {
+			m_engine->set_position(pos);
+			m_engine->go({.movetime = 2000ms});
+		}
 	});
 	m_board->set_on_capture([this](Piece p) {
 		m_side_menu->add_capture(p);
@@ -29,6 +51,11 @@ Gameplay::Gameplay(gsl::not_null<App*> app, bool white) : m_app(app), m_white_bo
 	m_board_view->update_board(static_cast<std::uint64_t const*>(m_board->get_bitboard()), m_white_bottom);
 
 	m_confirm_dialog = std::make_unique<ui::ConfirmDialog>(m_app, *m_font);
+
+	if (m_engine && !white) {
+		m_engine->set_position(m_board->get_position());
+		m_engine->go({.movetime = 2000ms});
+	}
 }
 
 auto Gameplay::update() -> std::unique_ptr<State> {
@@ -48,11 +75,13 @@ auto Gameplay::update() -> std::unique_ptr<State> {
 
 	if (m_go_main_menu) { return std::make_unique<Menu>(m_app); }
 
+	m_side_menu->update_move_list();
+
 	if (m_connection) {
 		auto conn_event = m_connection->poll_event();
 		if (!conn_event) { return nullptr; }
 
-		if (auto move = m_move_source->poll_remote_move(*conn_event)) { m_board->move(*move); }
+		if (conn_event->kind == GameConnection::IncomingEvent::Kind::Move) { m_board->move(conn_event->move); }
 		if (conn_event->kind == GameConnection::IncomingEvent::Kind::DrawOffer) {
 			m_pending_confirm = PendingConfirm::DrawAccept;
 			m_confirm_dialog->open("Opponent requested a draw, accept?");
@@ -110,20 +139,23 @@ void Gameplay::handle_input() {
 						m_pending_confirm = PendingConfirm::None;
 						m_confirm_dialog->close();
 					}
-				} else if (m_move_source->is_turn()) {
+				} else {
 					auto pos = screen_to_sq(window_to_board(m_mouse_pos, m_app->get_context().window_size()));
 					auto sq = pos.x + (pos.y * 8);
 					if (sq >= 0 && sq < 64) {
 						sq = m_white_bottom ? sq : 63 - sq;
 						m_board->click_square(static_cast<std::uint8_t>(sq), m_board_view->get_square_outline(),
-											  m_white_bottom);
+											  m_white_bottom, m_color);
 					}
 				}
 			}
 		}
 		if (m_board->get_ending()) {
 			if (auto const* key = std::get_if<le::event::Key>(&e)) {
-				if (key->action == GLFW_RELEASE) { m_go_main_menu = true; }
+				if (key->action == GLFW_RELEASE && key->key == GLFW_KEY_ESCAPE) {
+					m_go_main_menu = true;
+					if (m_engine) { m_engine->stop(); }
+				}
 			}
 		}
 		if (auto const* key = std::get_if<le::event::Key>(&e)) {
@@ -132,13 +164,13 @@ void Gameplay::handle_input() {
 				m_board_view->update_board(static_cast<std::uint64_t const*>(m_board->get_bitboard()), m_white_bottom);
 			}
 			if (key->action == GLFW_RELEASE && key->key == GLFW_KEY_G) {
-				if (m_move_source->is_turn() && !m_confirm_dialog->is_open()) {
+				if (is_turn() && !m_confirm_dialog->is_open()) {
 					m_pending_confirm = PendingConfirm::Draw;
 					m_confirm_dialog->open("Are you sure you want to draw?");
 				}
 			}
 			if (key->action == GLFW_RELEASE && key->key == GLFW_KEY_H) {
-				if (m_move_source->is_turn() && !m_confirm_dialog->is_open()) {
+				if (is_turn() && !m_confirm_dialog->is_open()) {
 					m_pending_confirm = PendingConfirm::Resign;
 					m_confirm_dialog->open("Are you sure you want to resign?");
 				}

@@ -1,12 +1,13 @@
 #include "castlemate/core/board.hpp"
 #include "castlemate/app.hpp"
 #include "castlemate/core/movegen.hpp"
+#include "castlemate/utils/algebraic.hpp"
 #include "castlemate/utils/bit_math.hpp"
 #include "castlemate/utils/constants.hpp"
 
 namespace CastleMate {
 namespace {
-constexpr auto base_fen_v = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+constexpr auto base_fen_v = "8/8/8/2N5/8/2k1N3/Q3r2q/K7 w - - 0 1";
 }
 
 Board::Board(gsl::not_null<App*> app) : m_app(app) {
@@ -17,23 +18,32 @@ Board::Board(gsl::not_null<App*> app) : m_app(app) {
 	if (!m_move_buffer || !m_capture_buffer) { throw std::runtime_error{"Failed to load audio buffer"}; }
 }
 
-void Board::click_square(std::uint8_t sq, SquareOutline& outline, bool white_bottom) {
+void Board::click_square(std::uint8_t sq, SquareOutline& outline, bool white_bottom, Color player) {
 	if (m_pending_move) { return; }
 
-	auto display_sq = white_bottom ? sq : 63 - sq;
+	auto own_piece = [&](std::uint8_t s) {
+		return (get_bit(m_position.white_occ, s) && player == Color::White) ||
+			   (get_bit(m_position.black_occ, s) && player == Color::Black);
+	};
 
-	if (m_selected_sq.has_value()) {
-		move({.from = *m_selected_sq, .to = sq});
-		m_selected_sq = std::nullopt;
-	} else if (get_bit(m_position.occ, sq)) {
-		if ((get_bit(m_position.white_occ, sq) && m_position.turn == Color::Black) ||
-			(get_bit(m_position.black_occ, sq) && m_position.turn == Color::White)) {
-			return;
-		}
-		m_selected_sq = sq;
+	auto select = [&](std::uint8_t s) {
+		m_selected_sq = s;
+		auto display_sq = white_bottom ? s : 63 - s;
 		auto pos = glm::ivec2{display_sq % 8, display_sq / 8};
 		outline.set_position((glm::vec2{pos - glm::ivec2{4, 4}} * tile_size_v) + (tile_size_v * 0.5f));
+	};
+
+	if (m_selected_sq.has_value()) {
+		if (own_piece(sq)) {
+			select(sq);
+		} else {
+			if (player == m_position.turn) { move({.from = *m_selected_sq, .to = sq}); }
+			m_selected_sq = std::nullopt;
+		}
+	} else if (get_bit(m_position.occ, sq) && own_piece(sq)) {
+		select(sq);
 	}
+
 	outline.should_draw = m_selected_sq.has_value();
 }
 
@@ -53,30 +63,38 @@ void Board::update_occ() {
 
 void Board::move(Move m) {
 	auto moves = legal_moves(m_position);
-	if (std::ranges::find(moves, m) == moves.end()) { return; }
 
-	// promotion
-	auto is_white = get_bit(m_position.bb[WP], m.from);
-	auto is_black = get_bit(m_position.bb[BP], m.from);
-	if ((is_white && m.to >= 56) || (is_black && m.to < 8)) {
+	auto const is_white = get_bit(m_position.bb[WP], m.from);
+	auto const is_black = get_bit(m_position.bb[BP], m.from);
+	auto const is_promotion = (is_white && m.to >= 56) || (is_black && m.to < 8);
+
+	if (is_promotion) {
+		// reduce matches to only .from and .to so UI clicks work
+		auto matches = [&](Move const& legal) {
+			return legal.from == m.from && legal.to == m.to;
+		};
+		if (std::ranges::find_if(moves, matches) == moves.end()) { return; }
+
 		m_pending_move = m;
 		m_should_promote = true;
 		return;
 	}
 
+	if (std::ranges::find(moves, m) == moves.end()) { return; }
+
 	finish_move(m);
 }
 
 void Board::finish_move(Move m) {
-	auto move_old = m;
-	auto pos_old = m_position;
+	auto white = m_position.turn == Color::White;
+	auto algebraic = to_algebraic(m, m_position);
 
-	auto capture = make_move(m_position, m).captured;
-	m_white_turn = !m_white_turn;
+	make_move(m_position, m);
+	auto capture = m_position.state->captured;
 	m_update_view = true;
 
 	if (in_checkmate(m_position)) {
-		m_ending.white_won = !m_white_turn;
+		m_ending.white_won = m_position.turn != Color::White;
 		m_has_ended = true;
 	}
 	if (in_stalemate(m_position)) {
@@ -84,13 +102,18 @@ void Board::finish_move(Move m) {
 		m_has_ended = true;
 	}
 
-	if (!capture) {
+	if (capture == COUNT_) {
 		m_app->get_context().get_audio_mixer().play_sfx(m_move_buffer.get());
 	} else {
 		m_app->get_context().get_audio_mixer().play_sfx(m_capture_buffer.get());
-		if (m_on_capture && capture != COUNT_) { m_on_capture(*capture); }
+		if (m_on_capture && capture != COUNT_) { m_on_capture(capture); }
 	}
 
-	if (m_on_move) { m_on_move(move_old, pos_old, !m_white_turn); }
+	if (m_on_move) {
+		std::println("call callback");
+		m_on_move(m, m_position, algebraic, white);
+	} else {
+		std::println("no callback");
+	}
 }
 } // namespace CastleMate

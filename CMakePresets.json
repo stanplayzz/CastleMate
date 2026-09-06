@@ -188,6 +188,11 @@
             "configuration": "Debug"
         },
         {
+            "name": "Clang Release",
+            "configurePreset": "ninja-clang",
+            "configuration": "Release"
+        },
+        {
             "name": "Clang RelWithDebInfo",
             "configurePreset": "ninja-clang",
             "configuration": "RelWithDebInfo"

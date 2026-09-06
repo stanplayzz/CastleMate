@@ -10,11 +10,11 @@ class Board {
   public:
 	Board(gsl::not_null<App*> app);
 
-	void click_square(std::uint8_t sq, SquareOutline& outline, bool white_bottom);
+	void click_square(std::uint8_t sq, SquareOutline& outline, bool white_bottom, Color player);
 
 	void set_promotion(Piece p);
 
-	void set_on_move(std::function<void(Move, Position&, bool)> cb) { m_on_move = std::move(cb); }
+	void set_on_move(std::function<void(Move, Position&, std::string const&, bool)> cb) { m_on_move = std::move(cb); }
 	void set_on_capture(std::function<void(Piece)> cb) { m_on_capture = std::move(cb); }
 
 	[[nodiscard]] auto get_selected_square() const -> std::optional<int> { return m_selected_sq; }
@@ -31,15 +31,17 @@ class Board {
 		return false;
 	}
 
+	[[nodiscard]] auto white_turn() const { return m_position.turn == Color::White; }
+
 	[[nodiscard]] auto show_promotion_view() const -> std::optional<bool> {
-		return m_should_promote ? std::optional<bool>{m_white_turn} : std::nullopt;
+		return m_should_promote ? std::optional<bool>{white_turn()} : std::nullopt;
 	}
+
+	[[nodiscard]] auto get_position() const -> Position const& { return m_position; }
 
 	[[nodiscard]] auto get_ending() const -> std::optional<GameEnding> {
 		return m_has_ended ? std::optional<GameEnding>(m_ending) : std::nullopt;
 	}
-
-	[[nodiscard]] auto white_turn() const { return m_white_turn; }
 
 	void set_ending(GameEnding ending) {
 		m_has_ended = true;
@@ -60,8 +62,6 @@ class Board {
 	std::optional<std::uint8_t> m_selected_sq{};
 	bool m_update_view{};
 
-	bool m_white_turn{true};
-
 	bool m_should_promote{};
 	std::optional<Move> m_pending_move{};
 
@@ -71,7 +71,7 @@ class Board {
 	std::unique_ptr<le::IAudioBuffer> m_move_buffer{};
 	std::unique_ptr<le::IAudioBuffer> m_capture_buffer{};
 
-	std::function<void(Move, Position&, bool)> m_on_move{};
+	std::function<void(Move, Position&, std::string const&, bool)> m_on_move{};
 	std::function<void(Piece)> m_on_capture;
 };
 } // namespace CastleMate

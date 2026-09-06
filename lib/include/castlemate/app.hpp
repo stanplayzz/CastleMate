@@ -1,4 +1,5 @@
 #pragma once
+#include "castlemate/engine/engine.hpp"
 #include "castlemate/network/network.hpp"
 #include "castlemate/state.hpp"
 #include <le2d/context.hpp>
@@ -7,7 +8,7 @@
 namespace CastleMate {
 class App {
   public:
-	App();
+	App(std::optional<std::string> engine);
 
 	void run();
 
@@ -23,6 +24,8 @@ class App {
 
 	[[nodiscard]] auto network() -> Network& { return m_network; }
 
+	[[nodiscard]] auto engine() -> std::unique_ptr<IEngine>& { return m_engine; }
+
 	void close() const { m_should_close = true; }
 
   private:
@@ -30,6 +33,7 @@ class App {
 
 	std::unique_ptr<le::Context> m_context{};
 	std::unique_ptr<le::IDataLoader> m_data_loader{};
+	std::unique_ptr<IEngine> m_engine{};
 
 	StateManager m_state_manager{};
 

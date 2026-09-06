@@ -26,6 +26,7 @@ if(CASTLEMATE_BUILD_SERVER)
     add_subdirectory(server)
 else()
     add_subdirectory(ext)
+    add_subdirectory(engine)
     add_subdirectory(lib)
     add_subdirectory(app)
 

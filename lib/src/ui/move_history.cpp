@@ -11,11 +11,23 @@ constexpr auto move_col_width_v = 220;
 
 MoveHistory::MoveHistory(gsl::not_null<le::IFont*> font, kvf::Rect<> const& bounds) : m_font(font), m_bounds(bounds) {}
 
-void MoveHistory::append_move(std::string const& notation, bool white) {
-	if (white) {
-		add_row(notation);
-	} else if (!m_rows.empty()) {
-		m_rows.back().black.set_string(*m_font, notation, {.height = le::TextHeight{60}});
+void MoveHistory::append_move(std::string const& algebraic, bool white) {
+	std::lock_guard lock{m_mutex};
+	m_pending_moves.push_back({.algebraic = algebraic, .white = white});
+}
+
+void MoveHistory::update_list() {
+	auto moves = std::vector<PendingMove>{};
+	{
+		std::lock_guard lock(m_mutex);
+		moves.swap(m_pending_moves);
+	}
+	for (auto& move : moves) {
+		if (move.white) {
+			add_row(move.algebraic);
+		} else if (!m_rows.empty()) {
+			m_rows.back().black.set_string(*m_font, move.algebraic, {.height = le::TextHeight{60}});
+		}
 	}
 }
 
@@ -58,6 +70,7 @@ void MoveHistory::add_row(std::string const& notation) {
 	row.black.transform.position = {m_bounds.top_left().x + number_col_width_v + move_col_width_v, y};
 
 	++m_move_count;
+
 	m_rows.push_back(std::move(row));
 }
 } // namespace CastleMate::ui
